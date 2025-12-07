@@ -1,0 +1,524 @@
+/* ===================================
+   DESIGN SYSTEM - CRYPTO LEAGUES
+   =================================== */
+
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Pacifico&display=swap');
+
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* Brand Colors */
+  --color-primary: #09C285;
+  --color-primary-dark: #07a371;
+  --color-primary-light: #0bd494;
+
+  --color-button: #09C285;
+  --color-button-hover: #07a371;
+  --color-button-active: #06895d;
+
+  /* Text Colors */
+  --color-text-primary: #000000;
+  --color-text-secondary: rgba(0, 0, 0, 0.5);
+  --color-text-muted: rgba(0, 0, 0, 0.4);
+
+  /* Background Colors */
+  --color-bg-primary: #FFFFFF;
+  --color-bg-secondary: #F8F9FA;
+  --color-bg-tertiary: #F0F2F5;
+
+  /* Accent Colors */
+  --color-success: #09C285;
+  --color-danger: #FF4D4F;
+  --color-warning: #FFA940;
+  --color-info: #265CFF;
+
+  /* Neutral Colors */
+  --color-border: rgba(0, 0, 0, 0.1);
+  --color-border-light: rgba(0, 0, 0, 0.05);
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #09C285 0%, #07a371 100%);
+  --gradient-button: linear-gradient(135deg, #09C285 0%, #07a371 100%);
+  --gradient-green: linear-gradient(135deg, #09C285 0%, #0bd494 100%);
+  --gradient-blue: linear-gradient(135deg, #265CFF 0%, #1e4dd9 100%);
+  --gradient-orange: linear-gradient(135deg, #FFA940 0%, #FF7A45 100%);
+
+  /* Glass Effect */
+  --glass-bg: rgba(255, 255, 255, 0.9);
+  --glass-border: rgba(0, 0, 0, 0.1);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  --glass-blur: blur(8px);
+
+  --color-accent-blue: #4a90e2;
+  --color-accent-purple: #764ba2;
+  --color-accent-green: #38ef7d;
+  --color-accent-red: #fe5196;
+  --color-accent-orange: #ff8a00;
+
+  /* Status Colors */
+  --color-success: #10b981;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
+
+  /* Typography */
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  --spacing-3xl: 4rem;
+
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  /* Transitions */
+  --transition-fast: 150ms ease-in-out;
+  --transition-base: 250ms ease-in-out;
+  --transition-slow: 350ms ease-in-out;
+
+  /* Z-index */
+  --z-dropdown: 1000;
+  --z-modal: 2000;
+  --z-tooltip: 3000;
+}
+
+/* Dark Mode Theme */
+:root.dark-mode {
+  /* Text Colors */
+  --color-text-primary: #F0F0F0;
+  --color-text-secondary: rgba(240, 240, 240, 0.7);
+  --color-text-muted: rgba(240, 240, 240, 0.5);
+
+  /* Background Colors */
+  --color-bg-primary: #0a0a0f;
+  --color-bg-secondary: #12121a;
+  --color-bg-tertiary: #1a1a25;
+
+  /* Neutral Colors */
+  --color-border: rgba(240, 240, 240, 0.1);
+  --color-border-light: rgba(240, 240, 240, 0.05);
+
+  /* Glass Effect */
+  --glass-bg: rgba(20, 20, 30, 0.9);
+  --glass-border: rgba(240, 240, 240, 0.1);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Dark Mode Element Overrides */
+:root.dark-mode body,
+:root.dark-mode h1,
+:root.dark-mode h2,
+:root.dark-mode h3,
+:root.dark-mode h4,
+:root.dark-mode h5,
+:root.dark-mode h6,
+:root.dark-mode p,
+:root.dark-mode span,
+:root.dark-mode div,
+:root.dark-mode label,
+:root.dark-mode a,
+body.dark-mode,
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode h5,
+body.dark-mode h6,
+body.dark-mode p,
+body.dark-mode span,
+body.dark-mode div,
+body.dark-mode label,
+body.dark-mode a {
+  color: #F0F0F0 !important;
+}
+
+:root.dark-mode .token-name,
+:root.dark-mode .card-title,
+:root.dark-mode .modal-close,
+:root.dark-mode .nav-link,
+:root.dark-mode .btn-secondary {
+  color: #F0F0F0 !important;
+}
+
+:root.dark-mode .token-price-value {
+  color: #F0F0F0 !important;
+}
+
+/* SVG and vector icons in dark mode */
+:root.dark-mode svg {
+  stroke: #F0F0F0;
+}
+
+:root.dark-mode svg[stroke="#09C285"],
+:root.dark-mode svg [stroke="#09C285"] {
+  stroke: #09C285 !important;
+}
+
+:root.dark-mode .input {
+  background: var(--color-bg-secondary);
+  color: #F0F0F0;
+  border-color: var(--glass-border);
+}
+
+:root.dark-mode .input::placeholder {
+  color: rgba(240, 240, 240, 0.4);
+}
+
+:root.dark-mode .btn-secondary {
+  background: rgba(240, 240, 240, 0.1);
+  border-color: rgba(240, 240, 240, 0.2);
+  color: #F0F0F0 !important;
+}
+
+:root.dark-mode .btn-secondary:hover {
+  background: rgba(240, 240, 240, 0.15);
+  border-color: rgba(240, 240, 240, 0.3);
+}
+
+/* Dark Mode Card Styling - Lighter backgrounds like Dream Team */
+:root.dark-mode .card,
+body.dark-mode .card {
+  background: rgba(30, 30, 45, 0.95) !important;
+  border-color: rgba(240, 240, 240, 0.15) !important;
+}
+
+:root.dark-mode .token-card,
+body.dark-mode .token-card {
+  background: rgba(35, 35, 55, 0.9) !important;
+  border-color: rgba(240, 240, 240, 0.12) !important;
+}
+
+/* Lighter background for mini chart areas in dark mode */
+:root.dark-mode [style*="background: var(--color-bg-secondary)"],
+body.dark-mode [style*="background: var(--color-bg-secondary)"] {
+  background: rgba(45, 45, 70, 0.8) !important;
+}
+
+/* Base Styles */
+body {
+  margin: 0;
+  padding: 20px 0 0 0;
+  /* Add top padding for fixed header (reduced from 80px) */
+  font-family: var(--font-primary);
+  font-weight: var(--font-weight-medium);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Animated Background */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(56, 239, 125, 0.05) 0%, transparent 50%);
+  z-index: -1;
+  animation: backgroundPulse 15s ease-in-out infinite;
+}
+
+@keyframes backgroundPulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: var(--spacing-md);
+  transition: color 0.3s ease, transform 0.2s ease;
+  cursor: default;
+}
+
+h1:hover,
+h2:hover,
+h3:hover,
+h4:hover,
+h5:hover,
+h6:hover {
+  color: var(--color-primary);
+  transform: translateX(3px);
+}
+
+h1 {
+  font-size: 3rem;
+}
+
+h2 {
+  font-size: 2.25rem;
+}
+
+h3 {
+  font-size: 1.875rem;
+}
+
+h4 {
+  font-size: 1.5rem;
+}
+
+h5 {
+  font-size: 1.25rem;
+}
+
+h6 {
+  font-size: 1rem;
+}
+
+p {
+  margin-bottom: var(--spacing-md);
+  transition: color 0.3s ease, transform 0.2s ease;
+  cursor: default;
+}
+
+p:hover {
+  color: var(--color-primary);
+  transform: translateX(2px);
+}
+
+/* Links */
+a {
+  color: var(--color-accent-blue);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-primary);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--glass-bg);
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Utility Classes */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+}
+
+/* Text Gradient */
+.text-gradient {
+  background: var(--gradient-green);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  h1 {
+    font-size: 2.5rem;
+  }
+
+  h2 {
+    font-size: 2rem;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    font-size: 1.75rem;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+  }
+
+  .container {
+    padding: 0 var(--spacing-md);
+  }
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 1.75rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  h3 {
+    font-size: 1.125rem;
+  }
+}
+
+/* Loading States */
+.loading {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--color-accent-blue);
+  animation: spin 0.8s linear infinite;
+}
+
+.skeleton {
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0.05) 25%,
+      rgba(255, 255, 255, 0.1) 50%,
+      rgba(255, 255, 255, 0.05) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+  border-radius: var(--radius-md);
+}

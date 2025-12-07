@@ -1,0 +1,294 @@
+/* Game Card Hover Effects */
+.game-mode-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.game-mode-card:hover {
+    transform: scale(1.08) translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.game-mode-card:active {
+    transform: scale(0.95) translateY(0);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.1s ease;
+}
+
+/* Hourglass Animation */
+.game-mode-card svg {
+    display: inline-block;
+}
+
+/* Rotate hourglass every 20 seconds */
+@keyframes hourglassRotate {
+
+    0%,
+    95% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(180deg);
+    }
+}
+
+/* Apply animation only to Time-Based card's SVG */
+.game-mode-card:nth-child(3) svg {
+    animation: hourglassRotate 20s ease-in-out infinite;
+    transform-origin: center center;
+}
+
+/* Dream Team Animation - Members appear one by one and stay */
+@keyframes teamMemberAppear {
+    0% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+
+    12.5%,
+    87.5% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+}
+
+/* Apply to Dream Team card (1st card) - 8 second cycle: 4s build + 3s hold + 1s reset */
+.game-mode-card:nth-child(1) .team-member-1 {
+    animation: teamMemberAppear 8s ease-out 0s infinite;
+}
+
+.game-mode-card:nth-child(1) .team-member-2 {
+    animation: teamMemberAppear 8s ease-out 1s infinite;
+}
+
+.game-mode-card:nth-child(1) .team-member-3 {
+    animation: teamMemberAppear 8s ease-out 2s infinite;
+}
+
+.game-mode-card:nth-child(1) .team-member-4 {
+    animation: teamMemberAppear 8s ease-out 3s infinite;
+}
+
+.game-mode-card:nth-child(1) .team-member-5 {
+    animation: teamMemberAppear 8s ease-out 4s infinite;
+}
+
+/* Crypto Duel Animation - Coins collide and random winner */
+@keyframes slideInLeft {
+    0% {
+        transform: translateX(-80px);
+        opacity: 0;
+    }
+
+    30% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    50%,
+    70% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInRight {
+    0% {
+        transform: translateX(80px);
+        opacity: 0;
+    }
+
+    30% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    50%,
+    70% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes clashEffect {
+
+    0%,
+    45% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+
+    55% {
+        opacity: 0;
+        transform: scale(1);
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+@keyframes coinWin {
+
+    0%,
+    70% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    75% {
+        transform: scale(1.2);
+    }
+
+    80%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes coinLose {
+
+    0%,
+    70% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+}
+
+/* Apply to Crypto Duel card (2nd card) */
+.game-mode-card:nth-child(2) .coin-left {
+    animation: slideInLeft 6s ease-out infinite;
+}
+
+.game-mode-card:nth-child(2) .coin-right {
+    animation: slideInRight 6s ease-out infinite;
+}
+
+.game-mode-card:nth-child(2) .clash-effects {
+    animation: clashEffect 6s ease-out infinite;
+}
+
+.game-mode-card:nth-child(2) .vs-badge {
+    animation: clashEffect 6s ease-out infinite;
+}
+
+/* Randomly alternate winner - left wins on odd cycles, right wins on even */
+.game-mode-card:nth-child(2):nth-of-type(odd) .coin-left {
+    animation: slideInLeft 6s ease-out infinite, coinWin 6s ease-out infinite;
+}
+
+.game-mode-card:nth-child(2):nth-of-type(odd) .coin-right {
+    animation: slideInRight 6s ease-out infinite, coinLose 6s ease-out infinite;
+}
+
+.game-mode-card:nth-child(2):nth-of-type(even) .coin-left {
+    animation: slideInLeft 6s ease-out infinite, coinLose 6s ease-out infinite;
+}
+
+.game-mode-card:nth-child(2):nth-of-type(even) .coin-right {
+    animation: slideInRight 6s ease-out infinite, coinWin 6s ease-out infinite;
+}
+
+/* Predict Candle Animation - Candles move up (green) and down (red) */
+@keyframes candleUp {
+
+    0%,
+    20% {
+        transform: translateY(0);
+    }
+
+    40%,
+    60% {
+        transform: translateY(-8px);
+    }
+
+    80%,
+    100% {
+        transform: translateY(0);
+    }
+}
+
+@keyframes candleDown {
+
+    0%,
+    20% {
+        transform: translateY(0);
+    }
+
+    40%,
+    60% {
+        transform: translateY(8px);
+    }
+
+    80%,
+    100% {
+        transform: translateY(0);
+    }
+}
+
+/* Apply to Predict Candle card (4th card) - staggered timing */
+/* Candle 1 - Green (goes up) */
+.game-mode-card:nth-child(4) .candle-1 {
+    animation: candleUp 3s ease-in-out 0s infinite;
+}
+
+/* Candle 2 - Red (goes down) */
+.game-mode-card:nth-child(4) .candle-2 {
+    animation: candleDown 3s ease-in-out 0.3s infinite;
+}
+
+/* Candle 3 - Green (goes up) */
+.game-mode-card:nth-child(4) .candle-3 {
+    animation: candleUp 3s ease-in-out 0.6s infinite;
+}
+
+/* Candle 4 - Red (goes down) */
+.game-mode-card:nth-child(4) .candle-4 {
+    animation: candleDown 3s ease-in-out 0.9s infinite;
+}
+
+/* Candle 5 - Green (goes up) */
+.game-mode-card:nth-child(4) .candle-5 {
+    animation: candleUp 3s ease-in-out 1.2s infinite;
+}
+
+.game-mode-card.coming-soon {
+    opacity: 0.7;
+    border: 2px dashed rgba(0, 0, 0, 0.2);
+    cursor: not-allowed;
+}
+
+.game-mode-card.coming-soon:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.game-mode-card.coming-soon:active {
+    transform: none;
+}
