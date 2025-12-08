@@ -135,66 +135,47 @@ export const GAME_MODES = {
         </svg>`,
   },
   TIME_BASED: {
-    name: 'Time-Based Action',
+    name: '1min Frenzy',
     description: 'Make quick decisions before time runs out',
     path: '/time-based',
     icon: `<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <style>
+            @keyframes tick {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+            .stopwatch-hand {
+              transform-origin: 32px 34px;
+              animation: tick 2s steps(60) infinite;
+            }
+          </style>
+          
           <defs>
             <linearGradient id="time-grad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" style="stop-color:#09C285"/>
               <stop offset="100%" style="stop-color:#07a371"/>
             </linearGradient>
           </defs>
-          <!-- Top frame -->
-          <rect x="16" y="6" width="32" height="4" rx="2" fill="url(#time-grad)"/>
-          <!-- Bottom frame -->
-          <rect x="16" y="54" width="32" height="4" rx="2" fill="url(#time-grad)"/>
           
-          <!-- Glass outline - top bulb -->
-          <path d="M20 10 Q20 18 24 22 L32 28 L40 22 Q44 18 44 10" 
-                fill="none" 
-                stroke="url(#time-grad)" 
-                stroke-width="2.5" 
-                stroke-linecap="round"/>
+          <!-- Stopwatch Body -->
+          <circle cx="32" cy="34" r="22" stroke="url(#time-grad)" stroke-width="3" fill="none"/>
+          <circle cx="32" cy="34" r="22" stroke="url(#time-grad)" stroke-width="3" fill="url(#time-grad)" opacity="0.1"/>
           
-          <!-- Glass outline - bottom bulb -->
-          <path d="M20 54 Q20 46 24 42 L32 36 L40 42 Q44 46 44 54" 
-                fill="none" 
-                stroke="url(#time-grad)" 
-                stroke-width="2.5" 
-                stroke-linecap="round"/>
+          <!-- Top Button -->
+          <path d="M26 6H38V10H26V6Z" fill="url(#time-grad)"/>
+          <rect x="30" y="2" width="4" height="4" fill="url(#time-grad)"/>
           
-          <!-- Side walls -->
-          <line x1="20" y1="10" x2="20" y2="54" stroke="url(#time-grad)" stroke-width="2.5"/>
-          <line x1="44" y1="10" x2="44" y2="54" stroke="url(#time-grad)" stroke-width="2.5"/>
+          <!-- Ticks -->
+          <path d="M32 16V19" stroke="url(#time-grad)" stroke-width="2" stroke-linecap="round"/>
+          <path d="M32 49V52" stroke="url(#time-grad)" stroke-width="2" stroke-linecap="round"/>
+          <path d="M47 34H44" stroke="url(#time-grad)" stroke-width="2" stroke-linecap="round"/>
+          <path d="M17 34H20" stroke="url(#time-grad)" stroke-width="2" stroke-linecap="round"/>
           
-          <!-- Top sand (running low) -->
-          <ellipse cx="32" cy="16" rx="8" ry="3" fill="url(#time-grad)" opacity="0.3"/>
-          <path d="M24 16 Q24 20 28 23 L32 26 L36 23 Q40 20 40 16" 
-                fill="url(#time-grad)" 
-                opacity="0.3"/>
+          <!-- Hand -->
+          <line x1="32" y1="34" x2="32" y2="20" stroke="#FF4D4F" stroke-width="2" stroke-linecap="round" class="stopwatch-hand"/>
           
-          <!-- Bottom sand (filling up) -->
-          <path d="M22 52 Q22 48 26 44 L32 39 L38 44 Q42 48 42 52 Z" 
-                fill="url(#time-grad)" 
-                opacity="0.85"/>
-          <ellipse cx="32" cy="52" rx="10" ry="2" fill="url(#time-grad)" opacity="0.85"/>
-          
-          <!-- Narrow neck/funnel -->
-          <path d="M30 28 L32 32 L34 28" 
-                fill="url(#time-grad)" 
-                opacity="0.5"/>
-          
-          <!-- Falling sand particles -->
-          <circle cx="32" cy="29" r="0.8" fill="url(#time-grad)" opacity="0.7"/>
-          <circle cx="32" cy="32" r="0.8" fill="url(#time-grad)" opacity="0.7"/>
-          <circle cx="32" cy="35" r="0.8" fill="url(#time-grad)" opacity="0.7"/>
-          
-          <!-- Decorative corner details -->
-          <circle cx="20" cy="10" r="1.5" fill="url(#time-grad)"/>
-          <circle cx="44" cy="10" r="1.5" fill="url(#time-grad)"/>
-          <circle cx="20" cy="54" r="1.5" fill="url(#time-grad)"/>
-          <circle cx="44" cy="54" r="1.5" fill="url(#time-grad)"/>
+          <!-- Center Dot -->
+          <circle cx="32" cy="34" r="3" fill="#3B82F6"/>
         </svg>`,
   },
   PREDICT_CANDLE: {
@@ -250,9 +231,12 @@ export const GAME_MODES = {
 
 // Time Periods
 export const TIME_PERIODS = {
-  ONE_HOUR: { hours: 1, label: '1H' },
-  FOUR_HOURS: { hours: 4, label: '4H' },
-  ONE_DAY: { hours: 24, label: '1D' },
+  ONE_MIN: { hours: 1 / 60, label: '1M', minutes: 1 },
+  TEN_MINS: { hours: 10 / 60, label: '10M', minutes: 10 },
+  THIRTY_MINS: { hours: 0.5, label: '30M', minutes: 30 },
+  ONE_HOUR: { hours: 1, label: '1H', minutes: 60 },
+  FOUR_HOURS: { hours: 4, label: '4H', minutes: 240 },
+  ONE_DAY: { hours: 24, label: '1D', minutes: 1440 },
 };
 
 // Point Multipliers

@@ -1,7 +1,7 @@
 // Pending Action Widget Component
 // Floating widget that appears when user has pending team submission
 
-import { subscribeToTeam, isTeamComplete, setShouldOpenModal } from '../utils/teamState.js';
+import { subscribeToTeam, isTeamComplete, setShouldOpenModal, getSelectedTeam } from '../utils/teamState.js';
 import { navigate } from '../App.js';
 
 let widgetElement = null;
@@ -19,8 +19,8 @@ export function createPendingActionWidget() {
         <line x1="12" y1="16" x2="12.01" y2="16"></line>
       </svg>
     </div>
-    <span class="pending-widget-text">Pending Submission - Dream Team</span>
-    <span class="pending-widget-badge">15</span>
+    <span class="pending-widget-text">Pending Dream Team Selection</span>
+    <span class="pending-widget-badge">0</span>
   `;
 
   // Add styles
@@ -42,8 +42,14 @@ export function createPendingActionWidget() {
 }
 
 function handleWidgetClick() {
-  // Set flag to auto-open modal
-  setShouldOpenModal(true);
+  const team = getSelectedTeam();
+
+  // Set flag to auto-open modal ONLY if team is complete
+  if (team.length === 15) {
+    setShouldOpenModal(true);
+  } else {
+    setShouldOpenModal(false);
+  }
 
   // Navigate to Dream Team page
   navigate('/dream-team');
@@ -54,19 +60,39 @@ function handleWidgetClick() {
   }
 }
 
-function updateWidgetVisibility() {
+function updateWidgetVisibility(team) {
   if (!widgetElement) return;
+
+  // Use provided team or get latest
+  const currentTeam = Array.isArray(team) ? team : getSelectedTeam();
 
   // Check if we're on Dream Team page
   const currentPath = window.location.hash.replace('#', '') || '/';
   const isOnDreamTeam = currentPath === '/dream-team';
 
   // Show widget only if:
-  // 1. Team is complete (15 tokens)
+  // 1. Team has ANY selection (> 0)
   // 2. User is NOT on Dream Team page
-  if (isTeamComplete() && !isOnDreamTeam) {
+  if (currentTeam.length > 0 && !isOnDreamTeam) {
     widgetElement.style.display = 'flex';
     widgetElement.classList.add('pulse');
+
+    // Update count badge
+    const badge = widgetElement.querySelector('.pending-widget-badge');
+    if (badge) badge.textContent = currentTeam.length;
+
+    // Update text based on completeness
+    const textEl = widgetElement.querySelector('.pending-widget-text');
+    if (textEl) {
+      if (currentTeam.length === 15) {
+        textEl.textContent = "Dream Team Ready to Submit";
+        badge.style.background = "#09C285"; // Green for ready
+      } else {
+        textEl.textContent = "Pending Dream Team Selection";
+        badge.style.background = "var(--color-primary)"; // Default blue
+      }
+    }
+
   } else {
     widgetElement.style.display = 'none';
     widgetElement.classList.remove('pulse');
@@ -93,38 +119,39 @@ function addWidgetStyles() {
       
       display: none;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       
       padding: 12px 20px;
-      background: var(--glass-bg);
+      background: rgba(15, 23, 42, 0.8);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      border: 1px solid var(--glass-border);
-      border-radius: 50px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
       
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     #pending-action-widget:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
-      background: rgba(255, 255, 255, 0.95);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+      border-color: var(--color-primary);
+      background: rgba(15, 23, 42, 0.9);
     }
-
+    
     .pending-widget-icon {
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--color-warning);
+      color: var(--color-primary);
     }
-
+    
     .pending-widget-text {
       font-family: var(--font-primary);
       font-weight: 600;
-      font-size: 0.9rem;
-      color: var(--color-text-primary);
+      font-size: 0.95rem;
+      color: #fff;
     }
 
     .pending-widget-badge {
@@ -136,9 +163,10 @@ function addWidgetStyles() {
       padding: 0 8px;
       background: var(--color-primary);
       color: white;
-      border-radius: 12px;
-      font-size: 0.75rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
       font-weight: 700;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
     #pending-action-widget.pulse {
@@ -146,11 +174,14 @@ function addWidgetStyles() {
     }
 
     @keyframes widgetPulse {
-      0%, 100% {
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      0% {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
       }
       50% {
-        box-shadow: 0 8px 32px rgba(9, 194, 133, 0.4);
+        box-shadow: 0 4px 25px rgba(9, 194, 133, 0.4);
+      }
+      100% {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
       }
     }
   `;

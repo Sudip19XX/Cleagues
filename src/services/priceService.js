@@ -105,6 +105,103 @@ export async function fetchHistoricalPrices(tokenId, days = 7) {
 }
 
 /**
+ * Get the UTC 00:00 opening price for a token (for daily competitions)
+ * @param {string} tokenId - CoinGecko token ID
+ * @returns {Promise<Object>} Object with opening price and timestamp
+ */
+export async function getUTCOpeningPrice(tokenId) {
+    try {
+        // Fetch OHLC data for the last 1 day to get today's opening price
+        const response = await fetch(
+            `https://api.coingecko.com/api/v3/coins/${tokenId}/ohlc?vs_currency=usd&days=1`
+        );
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data && data.length > 0) {
+            // OHLC data format: [timestamp, open, high, low, close]
+            // Get the first candle which should be closest to midnight UTC
+            const firstCandle = data[0];
+            return {
+                timestamp: firstCandle[0],
+                openPrice: firstCandle[1],
+                date: new Date(firstCandle[0]),
+            };
+        }
+
+        throw new Error('No OHLC data available');
+    } catch (error) {
+        console.error('Error fetching UTC opening price:', error);
+        throw error;
+    }
+}
+
+/**
+ * Get UTC 00:00 opening prices for multiple tokens
+ * @param {Array<string>} tokenIds - Array of CoinGecko token IDs
+ * @returns {Promise<Object>} Object with token IDs as keys and opening prices as values
+ */
+export async function getUTCOpeningPrices(tokenIds) {
+    try {
+        const prices = {};
+
+        // Fetch opening price for each token
+        // Note: This makes multiple API calls, consider rate limiting in production
+        for (const tokenId of tokenIds) {
+            try {
+                const data = await getUTCOpeningPrice(tokenId);
+                prices[tokenId] = data;
+            } catch (error) {
+                console.warn(`Could not fetch opening price for ${tokenId}:`, error.message);
+                prices[tokenId] = null;
+            }
+        }
+
+        return prices;
+    } catch (error) {
+        console.error('Error fetching UTC opening prices:', error);
+        throw error;
+    }
+}
+
+/**
+ * Get competition time info (UTC based daily competition)
+ * Competition starts at UTC 00:00 and ends at UTC 23:59:59
+ * @returns {Object} Object with competition timing info
+ */
+export function getCompetitionTimeInfo() {
+    const now = new Date();
+
+    // Get today's UTC 00:00
+    const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
+
+    // Competition end time: UTC 23:59:59
+    const competitionEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59));
+
+    // Time remaining in milliseconds
+    const timeRemaining = competitionEnd.getTime() - now.getTime();
+
+    // Format time remaining
+    const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+    const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+
+    return {
+        competitionStart: todayUTC,
+        competitionEnd: competitionEnd,
+        timeRemaining: timeRemaining,
+        timeRemainingFormatted: `${hours}h ${minutes}m ${seconds}s`,
+        isActive: timeRemaining > 0,
+        startTimestamp: todayUTC.getTime(),
+        endTimestamp: competitionEnd.getTime(),
+    };
+}
+
+/**
  * Search for tokens by name or symbol (within whitelist only)
  * @param {string} query - Search query
  * @returns {Promise<Array>} Array of matching tokens

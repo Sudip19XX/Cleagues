@@ -20,9 +20,9 @@ export function createWalletButton(container) {
   const updateButton = (state) => {
     if (state.connected) {
       button.innerHTML = `
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2">
-          <circle cx="12" cy="12" r="10"></circle>
-          <path d="M12 6v6l4 2"></path>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
         </svg>
         <span class="wallet-address">${formatAddress(state.address)}</span>
       `;
@@ -188,46 +188,115 @@ function showWalletModal() {
 }
 
 function showWalletMenu(button) {
+  // Remove existing menu if any
+  const existingMenu = button.querySelector('.wallet-menu');
+  if (existingMenu) {
+    existingMenu.remove();
+    return;
+  }
+
   // Create dropdown menu
   const menu = document.createElement('div');
   menu.className = 'wallet-menu';
+  const buttonWidth = button.offsetWidth;
   menu.style.cssText = `
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 4px);
     right: 0;
     background: var(--color-bg-secondary);
     border: 1px solid var(--glass-border);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-sm);
-    min-width: 200px;
-    box-shadow: var(--shadow-xl);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    padding: var(--spacing-xs);
+    width: ${buttonWidth}px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
     z-index: 1000;
-    animation: slideInRight 0.2s ease-out;
+    animation: fadeIn 0.15s ease-out;
   `;
 
   const state = walletManager.getState();
+  const chainLabel = state.chain === CHAINS.EVM ? 'EVM' : 'SOL';
+  const chainColor = state.chain === CHAINS.EVM ? '#E2761B' : '#9945FF';
 
   menu.innerHTML = `
-    <div style="padding: var(--spacing-md); border-bottom: 1px solid var(--glass-border); margin-bottom: var(--spacing-sm);">
-      <div style="font-size: 0.75rem; color: var(--color-text-muted); margin-bottom: 4px;">Connected</div>
-      <div style="font-family: var(--font-primary); font-size: 0.875rem;">${formatAddress(state.address)}</div>
-      <div style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 4px;">${state.chain === CHAINS.EVM ? 'Ethereum' : 'Solana'}</div>
+    <!-- Network tag centered -->
+    <div style="display: flex; align-items: center; justify-content: center; gap: var(--spacing-xs); padding: var(--spacing-sm) var(--spacing-md);">
+      <span style="font-size: 0.7rem; color: ${chainColor}; background: ${chainColor}20; padding: 2px 8px; border-radius: 4px; font-weight: 600;">${chainLabel}</span>
+      <span style="width: 6px; height: 6px; background: #09C285; border-radius: 50%;"></span>
     </div>
-    <button class="menu-item" id="copy-address">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    
+    <!-- Address with copy button -->
+    <div class="wallet-menu-item" style="padding: var(--spacing-xs) var(--spacing-md); display: flex; align-items: center; justify-content: center; gap: var(--spacing-xs);">
+      <span style="font-size: 0.8rem; font-family: monospace; color: var(--color-text-secondary);">${formatAddress(state.address)}</span>
+      <button id="copy-address" style="background: none; border: none; cursor: pointer; padding: 2px; color: var(--color-text-muted); display: flex;" title="Copy address">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+      </button>
+    </div>
+    
+    <div style="height: 1px; background: var(--glass-border); margin: var(--spacing-xs) 0;"></div>
+    
+    <!-- Rewards -->
+    <div class="wallet-menu-item" style="padding: var(--spacing-sm) var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-sm); cursor: pointer;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" stroke-width="2">
+        <circle cx="12" cy="8" r="7"></circle>
+        <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
       </svg>
-      Copy Address
-    </button>
-    <button class="menu-item" id="disconnect-wallet" style="color: var(--color-danger);">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <span style="flex: 1; font-size: 0.9rem;">Rewards</span>
+    </div>
+    
+    <!-- Transactions -->
+    <div class="wallet-menu-item" style="padding: var(--spacing-sm) var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-sm); cursor: pointer;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" stroke-width="2">
+        <line x1="12" y1="1" x2="12" y2="23"></line>
+        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+      </svg>
+      <span style="flex: 1; font-size: 0.9rem;">Transactions</span>
+    </div>
+    
+    <div style="height: 1px; background: var(--glass-border); margin: var(--spacing-xs) 0;"></div>
+    
+    <!-- Documentation -->
+    <div class="wallet-menu-item" style="padding: var(--spacing-sm) var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-sm); cursor: pointer;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="16" y1="13" x2="8" y2="13"></line>
+        <line x1="16" y1="17" x2="8" y2="17"></line>
+      </svg>
+      <span style="flex: 1; font-size: 0.9rem;">Documentation</span>
+    </div>
+    
+    <!-- Privacy Policy -->
+    <div class="wallet-menu-item" style="padding: var(--spacing-sm) var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-sm); cursor: pointer;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" stroke-width="2">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+      </svg>
+      <span style="flex: 1; font-size: 0.9rem;">Privacy Policy</span>
+    </div>
+    
+    <!-- FAQs -->
+    <div class="wallet-menu-item" style="padding: var(--spacing-sm) var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-sm); cursor: pointer;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+      </svg>
+      <span style="flex: 1; font-size: 0.9rem;">FAQs</span>
+    </div>
+    
+    <div style="height: 1px; background: var(--glass-border); margin: var(--spacing-xs) 0;"></div>
+    
+    <!-- Logout -->
+    <div class="wallet-menu-item" id="disconnect-wallet" style="padding: var(--spacing-sm) var(--spacing-md); display: flex; align-items: center; justify-content: center; gap: var(--spacing-sm); cursor: pointer; color: var(--color-danger);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
         <polyline points="16 17 21 12 16 7"></polyline>
         <line x1="21" y1="12" x2="9" y2="12"></line>
       </svg>
-      Disconnect
-    </button>
+      <span style="font-size: 0.9rem;">Logout</span>
+    </div>
   `;
 
   // Position menu relative to button
@@ -235,10 +304,23 @@ function showWalletMenu(button) {
   button.appendChild(menu);
 
   // Copy address handler
-  menu.querySelector('#copy-address').addEventListener('click', () => {
+  menu.querySelector('#copy-address').addEventListener('click', (e) => {
+    e.stopPropagation();
     navigator.clipboard.writeText(state.address);
-    alert('Address copied to clipboard!');
-    menu.remove();
+    const copyBtn = menu.querySelector('#copy-address');
+    copyBtn.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#09C285" stroke-width="2">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+    `;
+    setTimeout(() => {
+      copyBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+      `;
+    }, 1500);
   });
 
   // Disconnect handler
@@ -298,9 +380,16 @@ style.textContent = `
     background: var(--glass-bg);
   }
 
-  .wallet-button.connected {
-    background: var(--gradient-green);
+  .wallet-menu-item {
+    transition: background 0.15s ease;
+    border-radius: var(--radius-sm);
   }
+
+  .wallet-menu-item:hover {
+    background: var(--glass-bg);
+  }
+
+
 
   .wallet-address {
     font-family: var(--font-primary);

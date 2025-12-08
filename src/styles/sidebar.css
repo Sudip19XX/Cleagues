@@ -3,7 +3,7 @@
 .sidebar {
     position: fixed;
     left: 0;
-    top: 80px;
+    top: 64px;
     /* Below navbar */
     bottom: 0;
     width: 200px;
@@ -16,9 +16,12 @@
 
 .sidebar-content {
     padding: var(--spacing-md) var(--spacing-sm);
+    padding-bottom: 40px;
+    /* Room for pinned indicator */
     display: flex;
     flex-direction: column;
     height: 100%;
+    position: relative;
 }
 
 .sidebar-section {
@@ -130,7 +133,7 @@
 .app-container {
     display: flex;
     min-height: 100vh;
-    padding-top: 80px;
+    padding-top: 64px;
     /* Navbar height */
 }
 

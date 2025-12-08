@@ -34,7 +34,7 @@ export function createApp() {
     // Create main content area
     mainElement = document.createElement('main');
     mainElement.className = 'main-content';
-    mainElement.style.minHeight = 'calc(100vh - 80px)';
+    mainElement.style.minHeight = 'calc(100vh - 64px)';
     appContainerElement.appendChild(mainElement);
 
     app.appendChild(appContainerElement);

@@ -194,21 +194,50 @@
 }
 
 .token-card.selected-up {
-    background: rgba(9, 194, 133, 0.1);
+    background: rgba(9, 194, 133, 0.15);
     border-color: var(--color-primary);
+    border-width: 2px;
     box-shadow:
-        0 2px 8px rgba(9, 194, 133, 0.2),
-        0 0 20px rgba(9, 194, 133, 0.1),
+        0 0 0 1px rgba(9, 194, 133, 0.3),
+        0 4px 12px rgba(9, 194, 133, 0.25),
+        0 0 30px rgba(9, 194, 133, 0.15),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .token-card.selected-down {
-    background: rgba(255, 77, 79, 0.1);
+    background: rgba(255, 77, 79, 0.15);
     border-color: var(--color-danger);
+    border-width: 2px;
     box-shadow:
-        0 2px 8px rgba(255, 77, 79, 0.2),
-        0 0 20px rgba(255, 77, 79, 0.1),
+        0 0 0 1px rgba(255, 77, 79, 0.3),
+        0 4px 12px rgba(255, 77, 79, 0.25),
+        0 0 30px rgba(255, 77, 79, 0.15),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Dark mode - Enhanced prominent glow for selected tokens */
+:root.dark-mode .token-card.selected-up,
+body.dark-mode .token-card.selected-up {
+    background: rgba(9, 194, 133, 0.15) !important;
+    border-color: #09C285 !important;
+    border-width: 2px;
+    box-shadow:
+        0 0 0 1px rgba(9, 194, 133, 0.5),
+        0 0 12px rgba(9, 194, 133, 0.4),
+        inset 0 0 20px rgba(9, 194, 133, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+:root.dark-mode .token-card.selected-down,
+body.dark-mode .token-card.selected-down {
+    background: rgba(255, 77, 79, 0.15) !important;
+    border-color: #FF4D4F !important;
+    border-width: 2px;
+    box-shadow:
+        0 0 0 1px rgba(255, 77, 79, 0.5),
+        0 0 12px rgba(255, 77, 79, 0.4),
+        inset 0 0 20px rgba(255, 77, 79, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
 }
 
 /* Split Selection Overlay */
@@ -514,17 +543,32 @@
     }
 }
 
-/* Header */
+/* Header - Glassmorphism Style */
 .header {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    background: var(--color-bg-primary);
-    border-bottom: 1px solid var(--color-border);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.85);
+    border-bottom: none;
+    box-shadow:
+        0 2px 20px rgba(0, 0, 0, 0.08),
+        0 4px 40px rgba(0, 0, 0, 0.04);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     z-index: 100;
+}
+
+/* Header bottom edge blur effect */
+.header::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), transparent);
+    pointer-events: none;
 }
 
 .header-container {
@@ -539,7 +583,7 @@
 
 .header-container .logo {
     width: 200px;
-    padding: var(--spacing-md) var(--spacing-lg);
+    padding: var(--spacing-sm) var(--spacing-lg);
     flex-shrink: 0;
 }
 
@@ -547,7 +591,7 @@
     flex: 1;
     display: flex;
     justify-content: flex-end;
-    padding: var(--spacing-md) var(--spacing-lg);
+    padding: var(--spacing-sm) var(--spacing-lg);
 }
 
 .logo {
@@ -682,12 +726,12 @@
 .wallet-address {
     font-family: 'Courier New', monospace;
     font-size: 0.875rem;
-    color: #FFFFFF;
+    color: currentColor;
     font-weight: 600;
 }
 
 .wallet-text {
-    color: #FFFFFF;
+    color: currentColor;
     font-weight: 600;
 }
 

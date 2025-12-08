@@ -1,6 +1,6 @@
 // Dream Team Game Component
 
-import { fetchTopTokens, searchTokens } from '../../services/priceService.js';
+import { fetchTopTokens, searchTokens, getCompetitionTimeInfo } from '../../services/priceService.js';
 import { submitDreamTeam } from '../../contracts/gameContract.js';
 import { formatCurrency, formatPercentage, getPriceChangeClass } from '../../utils/formatters.js';
 import { MULTIPLIERS } from '../../utils/constants.js';
@@ -20,54 +20,43 @@ export function createDreamTeam() {
     transition: all 0.3s ease;
   `;
 
-  // Info Cards Section (above header) - 1-2-1 Layout
+  // Info Cards Section (above header) - 3 column layout
   const infoCardsSection = document.createElement('div');
   infoCardsSection.style.cssText = `
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-    grid-template-rows: auto auto;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: var(--spacing-lg);
     margin-bottom: var(--spacing-xl);
   `;
 
-  // Live Competitions Card (Left column, shorter height)
+  // Live Competitions Card (Left column)
   const liveCompCard = document.createElement('div');
   liveCompCard.className = 'card';
-  liveCompCard.style.cssText = 'position: relative; padding: var(--spacing-lg); grid-column: 1; grid-row: 1 / 3;';
+  liveCompCard.style.cssText = 'position: relative; padding: var(--spacing-lg);';
+
+  // Get initial competition time info
+  const compTimeInfo = getCompetitionTimeInfo();
+
   liveCompCard.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
-      <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#09C285" stroke-width="2">
-          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
-          <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
-          <path d="M4 22h16"></path>
-          <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
-          <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
-          <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
-        </svg>
-        <h3 style="margin: 0; font-size: 1.125rem; font-weight: 600;">Live Competitions</h3>
-      </div>
-      <div style="display: flex; gap: var(--spacing-xs);">
-        <button class="carousel-btn" id="comp-prev" style="background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M15 18l-6-6 6-6"></path>
-          </svg>
-        </button>
-        <button class="carousel-btn" id="comp-next" style="background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"></path>
-          </svg>
-        </button>
-      </div>
+    <div style="display: flex; justify-content: center; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-sm);">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#09C285" stroke-width="2">
+        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+        <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+        <path d="M4 22h16"></path>
+        <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
+        <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
+        <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+      </svg>
+      <h3 style="margin: 0; font-size: 1.125rem; font-weight: 600;">Daily Competition</h3>
     </div>
     
-    <div style="margin-bottom: var(--spacing-md);">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-sm);">
-        <h4 style="margin: 0; font-size: 1rem; font-weight: 600;">Weekend Warriors</h4>
-        <span class="badge badge-primary" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">FEATURED</span>
+    <div style="background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: var(--spacing-md); backdrop-filter: blur(10px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+      <div style="text-align: center; margin-bottom: var(--spacing-sm);">
+        <div style="font-size: 0.75rem; color: var(--color-text-muted); margin-bottom: 2px;">Reference: UTC 00:00 Opening Price</div>
+        <div style="font-size: 0.75rem; color: var(--color-text-muted);">Competition ends at 23:59 UTC</div>
       </div>
       
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md); margin-bottom: var(--spacing-md);">
+      <div style="display: flex; justify-content: space-between; margin-bottom: var(--spacing-sm);">
         <div>
           <div style="display: flex; align-items: center; gap: var(--spacing-xs); color: var(--color-text-secondary); font-size: 0.875rem; margin-bottom: 4px;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -82,8 +71,8 @@ export function createDreamTeam() {
           </div>
           <div style="font-size: 1.5rem; font-weight: 700; color: #09C285;">$25,000</div>
         </div>
-        <div>
-          <div style="display: flex; align-items: center; gap: var(--spacing-xs); color: var(--color-text-secondary); font-size: 0.875rem; margin-bottom: 4px;">
+        <div style="text-align: right;">
+          <div style="display: flex; align-items: center; justify-content: flex-end; gap: var(--spacing-xs); color: var(--color-text-secondary); font-size: 0.875rem; margin-bottom: 4px;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
               <circle cx="9" cy="7" r="4"></circle>
@@ -96,114 +85,208 @@ export function createDreamTeam() {
         </div>
       </div>
       
-      <div style="display: flex; align-items: center; gap: var(--spacing-xs); color: var(--color-text-secondary); font-size: 0.875rem; margin-bottom: var(--spacing-md);">
+      <div style="display: flex; align-items: center; justify-content: center; gap: var(--spacing-xs); color: var(--color-warning); font-size: 0.9rem; font-weight: 600; margin-bottom: var(--spacing-sm);">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"></circle>
           <path d="M12 6v6l4 2"></path>
         </svg>
-        1d 12h left
+        <span id="competition-timer">${compTimeInfo.timeRemainingFormatted}</span> remaining
+      </div>
+      
+      <div style="display: flex; justify-content: center;">
+        <button class="btn btn-primary" id="join-competition-btn">Join Competition</button>
       </div>
     </div>
     
-    <button class="btn btn-primary" style="width: 100%; margin-bottom: var(--spacing-sm);">Join Competition</button>
-    
-    <div style="display: flex; justify-content: center; gap: 6px; margin-top: var(--spacing-md);">
-      <div style="width: 8px; height: 8px; border-radius: 50%; background: #09C285;"></div>
-      <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--color-border);"></div>
-      <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--color-border);"></div>
-    </div>
-  `;
-
-  // Market News Card (top right, spans 2 columns)
-  const marketNewsCard = document.createElement('div');
-  marketNewsCard.className = 'card';
-  marketNewsCard.style.cssText = 'position: relative; padding: var(--spacing-md); grid-column: 2 / 4; grid-row: 1;';
-  marketNewsCard.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-sm);">
-      <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#09C285" stroke-width="2">
-          <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"></path>
-          <path d="M18 14h-8"></path>
-          <path d="M15 18h-5"></path>
-          <path d="M10 6h8v4h-8V6Z"></path>
+    <div style="display: flex; justify-content: center; gap: var(--spacing-sm); margin-top: var(--spacing-sm);">
+      <button class="carousel-btn" id="comp-prev" style="background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 18l-6-6 6-6"></path>
         </svg>
-        <h3 style="margin: 0; font-size: 1rem; font-weight: 600;">Market News</h3>
-      </div>
-      <button class="carousel-btn" id="news-refresh" style="background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 6px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"></path>
+      </button>
+      <button class="carousel-btn" id="comp-next" style="background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 18l6-6-6-6"></path>
         </svg>
       </button>
     </div>
-    
-    <div style="display: flex; align-items: center; gap: var(--spacing-xs); margin-bottom: var(--spacing-xs);">
-      <span class="badge badge-success" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;">bullish</span>
-      <span style="color: var(--color-text-muted); font-size: 0.7rem;">32m ago</span>
-    </div>
-    
-    <h4 style="margin: 0 0 var(--spacing-xs) 0; font-size: 0.9rem; font-weight: 600;">Ethereum L2 Update</h4>
-    
-    <p style="margin: 0; color: var(--color-text-secondary); font-size: 0.8rem; line-height: 1.4;">
-      Major scaling solution launches reducing gas fees by 90%.
-    </p>
   `;
 
-  // Recent Winners Card (Middle bottom)
+  // Start timer update interval
+  const timerInterval = setInterval(() => {
+    const timerElement = liveCompCard.querySelector('#competition-timer');
+    if (timerElement) {
+      const timeInfo = getCompetitionTimeInfo();
+      timerElement.textContent = timeInfo.timeRemainingFormatted;
+    }
+  }, 1000);
+
+  // Join Competition button click handler - scroll to build section with categories
+  const joinBtn = liveCompCard.querySelector('#join-competition-btn');
+  if (joinBtn) {
+    joinBtn.onclick = (e) => {
+      e.preventDefault();
+      // Scroll to controls row (categories) so they're visible
+      const controlsRow = document.getElementById('dream-team-controls');
+      if (controlsRow) {
+        controlsRow.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    };
+  }
+
+  // Recent Winners Card (spans 2 columns and 2 rows)
   const winnersCard = document.createElement('div');
   winnersCard.className = 'card';
-  winnersCard.style.cssText = 'position: relative; padding: var(--spacing-md); grid-column: 2 / 4; grid-row: 2;';
+  winnersCard.style.cssText = 'position: relative; padding: var(--spacing-md);';
   winnersCard.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-sm);">
-      <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#09C285" stroke-width="2">
-          <circle cx="12" cy="8" r="6"></circle>
-          <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"></path>
-        </svg>
-        <h3 style="margin: 0; font-size: 1rem; font-weight: 600;">Recent Winners</h3>
-      </div>
-      <span style="color: var(--color-text-muted); font-size: 0.7rem;">Last 24h</span>
+    <div style="display: flex; justify-content: center; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-sm);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#09C285" stroke-width="2">
+        <circle cx="12" cy="8" r="6"></circle>
+        <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"></path>
+      </svg>
+      <h3 style="margin: 0; font-size: 1.125rem; font-weight: 600;">Recent Winners</h3>
     </div>
     
-    <div style="display: flex; flex-direction: column; gap: var(--spacing-xs);">
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs); background: var(--glass-bg); border-radius: 6px;">
-        <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
-          <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: white;">1</div>
-          <div>
-            <div style="font-size: 0.85rem; font-weight: 600;">0x7a9f...3b2c</div>
-            <div style="font-size: 0.7rem; color: var(--color-text-muted);">Weekend Warriors</div>
+    <div style="background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: var(--spacing-sm); backdrop-filter: blur(10px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); max-height: 250px; overflow-y: auto;">
+      <div style="display: flex; flex-direction: column; gap: var(--spacing-xs);">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs); background: rgba(255,255,255,0.05); border-radius: 6px;">
+          <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+            <div style="width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: white;">1</div>
+            <div>
+              <div style="font-size: 0.8rem; font-weight: 600;">0x7a9f...3b2c</div>
+              <div style="font-size: 0.65rem; color: var(--color-text-muted);">Weekend Warriors</div>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #09C285;">$25,000</div>
+            <div style="font-size: 0.65rem; color: var(--color-text-muted);">2h ago</div>
           </div>
         </div>
-        <div style="text-align: right;">
-          <div style="font-size: 0.85rem; font-weight: 700; color: #09C285;">$25,000</div>
-          <div style="font-size: 0.7rem; color: var(--color-text-muted);">2h ago</div>
-        </div>
-      </div>
-      
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs); background: var(--glass-bg); border-radius: 6px;">
-        <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
-          <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #C0C0C0 0%, #A8A8A8 100%); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: white;">2</div>
-          <div>
-            <div style="font-size: 0.85rem; font-weight: 600;">0x4e1d...8f9a</div>
-            <div style="font-size: 0.7rem; color: var(--color-text-muted);">Crypto Sprint</div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs); background: rgba(255,255,255,0.05); border-radius: 6px;">
+          <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+            <div style="width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #C0C0C0 0%, #A8A8A8 100%); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: white;">2</div>
+            <div>
+              <div style="font-size: 0.8rem; font-weight: 600;">0x4e1d...8f9a</div>
+              <div style="font-size: 0.65rem; color: var(--color-text-muted);">Crypto Sprint</div>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #09C285;">$10,000</div>
+            <div style="font-size: 0.65rem; color: var(--color-text-muted);">5h ago</div>
           </div>
         </div>
-        <div style="text-align: right;">
-          <div style="font-size: 0.85rem; font-weight: 700; color: #09C285;">$10,000</div>
-          <div style="font-size: 0.7rem; color: var(--color-text-muted);">5h ago</div>
-        </div>
-      </div>
-      
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs); background: var(--glass-bg); border-radius: 6px;">
-        <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
-          <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #CD7F32 0%, #B87333 100%); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: white;">3</div>
-          <div>
-            <div style="font-size: 0.85rem; font-weight: 600;">0x9c2b...5d7e</div>
-            <div style="font-size: 0.7rem; color: var(--color-text-muted);">Daily Duel</div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs); background: rgba(255,255,255,0.05); border-radius: 6px;">
+          <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+            <div style="width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #CD7F32 0%, #B87333 100%); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: white;">3</div>
+            <div>
+              <div style="font-size: 0.8rem; font-weight: 600;">0x9c2b...5d7e</div>
+              <div style="font-size: 0.65rem; color: var(--color-text-muted);">Daily Duel</div>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #09C285;">$5,000</div>
+            <div style="font-size: 0.65rem; color: var(--color-text-muted);">8h ago</div>
           </div>
         </div>
-        <div style="text-align: right;">
-          <div style="font-size: 0.85rem; font-weight: 700; color: #09C285;">$5,000</div>
-          <div style="font-size: 0.7rem; color: var(--color-text-muted);">8h ago</div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs); background: rgba(255,255,255,0.05); border-radius: 6px;">
+          <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+            <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--glass-border); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: var(--color-text-primary);">4</div>
+            <div>
+              <div style="font-size: 0.8rem; font-weight: 600;">0x3f8a...2c1d</div>
+              <div style="font-size: 0.65rem; color: var(--color-text-muted);">Bull Run</div>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #09C285;">$2,500</div>
+            <div style="font-size: 0.65rem; color: var(--color-text-muted);">12h ago</div>
+          </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs); background: rgba(255,255,255,0.05); border-radius: 6px;">
+          <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+            <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--glass-border); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: var(--color-text-primary);">5</div>
+            <div>
+              <div style="font-size: 0.8rem; font-weight: 600;">0x1b5e...7a4f</div>
+              <div style="font-size: 0.65rem; color: var(--color-text-muted);">Moon Shot</div>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #09C285;">$1,000</div>
+            <div style="font-size: 0.65rem; color: var(--color-text-muted);">18h ago</div>
+          </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs); background: rgba(255,255,255,0.05); border-radius: 6px;">
+          <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+            <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--glass-border); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: var(--color-text-primary);">6</div>
+            <div>
+              <div style="font-size: 0.8rem; font-weight: 600;">0x8d2c...4e7b</div>
+              <div style="font-size: 0.65rem; color: var(--color-text-muted);">Diamond Hands</div>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #09C285;">$750</div>
+            <div style="font-size: 0.65rem; color: var(--color-text-muted);">20h ago</div>
+          </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs); background: rgba(255,255,255,0.05); border-radius: 6px;">
+          <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+            <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--glass-border); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: var(--color-text-primary);">7</div>
+            <div>
+              <div style="font-size: 0.8rem; font-weight: 600;">0x2f9a...1c3d</div>
+              <div style="font-size: 0.65rem; color: var(--color-text-muted);">Altcoin Arena</div>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #09C285;">$500</div>
+            <div style="font-size: 0.65rem; color: var(--color-text-muted);">21h ago</div>
+          </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs); background: rgba(255,255,255,0.05); border-radius: 6px;">
+          <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+            <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--glass-border); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: var(--color-text-primary);">8</div>
+            <div>
+              <div style="font-size: 0.8rem; font-weight: 600;">0x5e7f...9a2b</div>
+              <div style="font-size: 0.65rem; color: var(--color-text-muted);">Token Titans</div>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #09C285;">$400</div>
+            <div style="font-size: 0.65rem; color: var(--color-text-muted);">22h ago</div>
+          </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs); background: rgba(255,255,255,0.05); border-radius: 6px;">
+          <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+            <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--glass-border); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: var(--color-text-primary);">9</div>
+            <div>
+              <div style="font-size: 0.8rem; font-weight: 600;">0x6a3b...8d4c</div>
+              <div style="font-size: 0.65rem; color: var(--color-text-muted);">Pump Masters</div>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #09C285;">$300</div>
+            <div style="font-size: 0.65rem; color: var(--color-text-muted);">23h ago</div>
+          </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs); background: rgba(255,255,255,0.05); border-radius: 6px;">
+          <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+            <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--glass-border); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: var(--color-text-primary);">10</div>
+            <div>
+              <div style="font-size: 0.8rem; font-weight: 600;">0x4c8d...2f5e</div>
+              <div style="font-size: 0.65rem; color: var(--color-text-muted);">Whale Watch</div>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #09C285;">$200</div>
+            <div style="font-size: 0.65rem; color: var(--color-text-muted);">24h ago</div>
+          </div>
         </div>
       </div>
     </div>
@@ -212,72 +295,78 @@ export function createDreamTeam() {
   // User Teams Card (Right column)
   const userTeamsCard = document.createElement('div');
   userTeamsCard.className = 'card';
-  userTeamsCard.style.cssText = 'position: relative; padding: var(--spacing-md); grid-column: 4; grid-row: 1 / 3;';
+  userTeamsCard.style.cssText = 'position: relative; padding: var(--spacing-md);';
   userTeamsCard.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
-      <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#09C285" stroke-width="2">
-          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-          <circle cx="9" cy="7" r="4"></circle>
-          <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-        </svg>
-        <h3 style="margin: 0; font-size: 1rem; font-weight: 600;">My Teams</h3>
-      </div>
-      <span class="badge badge-primary" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;">3</span>
+    <div style="display: flex; justify-content: center; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-sm);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#09C285" stroke-width="2">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+        <circle cx="9" cy="7" r="4"></circle>
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+      </svg>
+      <h3 style="margin: 0; font-size: 1.125rem; font-weight: 600;">My Teams</h3>
     </div>
     
-    <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
-      <div style="padding: var(--spacing-sm); background: var(--glass-bg); border-radius: 8px; border-left: 3px solid #09C285;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xs);">
-          <div style="font-size: 0.85rem; font-weight: 600;">Team Alpha</div>
-          <span class="badge badge-success" style="font-size: 0.65rem; padding: 0.15rem 0.4rem;">Active</span>
+    <div style="background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: var(--spacing-sm); backdrop-filter: blur(10px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); max-height: 280px; overflow-y: auto;">
+      <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+        <div style="padding: var(--spacing-sm); background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 3px solid #09C285;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xs);">
+            <div style="font-size: 0.85rem; font-weight: 600;">Team Alpha</div>
+            <span class="badge badge-success" style="font-size: 0.65rem; padding: 0.15rem 0.4rem;">Active</span>
+          </div>
+          <div style="font-size: 0.7rem; color: var(--color-text-muted); margin-bottom: var(--spacing-xs);">15 tokens • Weekend Warriors</div>
+          <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+            <div style="width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #627EEA 0%, #4E5ECD 100%); border: 2px solid var(--color-bg-primary);"></div>
+            <div style="width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #F7931A 0%, #E07A0A 100%); border: 2px solid var(--color-bg-primary);"></div>
+            <div style="width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #8247E5 0%, #6B3CC7 100%); border: 2px solid var(--color-bg-primary);"></div>
+            <div style="width: 20px; height: 20px; border-radius: 50%; background: var(--glass-bg); border: 2px solid var(--color-bg-primary); display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: var(--color-text-muted);">+12</div>
+          </div>
         </div>
-        <div style="font-size: 0.7rem; color: var(--color-text-muted); margin-bottom: var(--spacing-xs);">15 tokens • Weekend Warriors</div>
-        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-          <div style="width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #627EEA 0%, #4E5ECD 100%); border: 2px solid var(--color-bg-primary);"></div>
-          <div style="width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #F7931A 0%, #E07A0A 100%); border: 2px solid var(--color-bg-primary);"></div>
-          <div style="width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #8247E5 0%, #6B3CC7 100%); border: 2px solid var(--color-bg-primary);"></div>
-          <div style="width: 20px; height: 20px; border-radius: 50%; background: var(--glass-bg); border: 2px solid var(--color-bg-primary); display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: var(--color-text-muted);">+12</div>
+        
+        <div style="padding: var(--spacing-sm); background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 3px solid var(--color-text-muted); opacity: 0.8;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xs);">
+            <div style="font-size: 0.85rem; font-weight: 600;">Team Beta</div>
+            <span class="badge" style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: var(--glass-bg);">Ended</span>
+          </div>
+          <div style="font-size: 0.7rem; color: var(--color-text-muted); margin-bottom: var(--spacing-xs);">15 tokens • Crypto Sprint</div>
+          <div style="font-size: 0.75rem; color: #09C285; font-weight: 600;">Rank: #42 • +$250</div>
+        </div>
+        
+        <div style="padding: var(--spacing-sm); background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 3px solid var(--color-text-muted); opacity: 0.8;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xs);">
+            <div style="font-size: 0.85rem; font-weight: 600;">Team Gamma</div>
+            <span class="badge" style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: var(--glass-bg);">Ended</span>
+          </div>
+          <div style="font-size: 0.7rem; color: var(--color-text-muted); margin-bottom: var(--spacing-xs);">15 tokens • Daily Duel</div>
+          <div style="font-size: 0.75rem; color: #09C285; font-weight: 600;">Rank: #15 • +$500</div>
+        </div>
+        
+        <div style="padding: var(--spacing-sm); background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 3px solid var(--color-text-muted); opacity: 0.8;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xs);">
+            <div style="font-size: 0.85rem; font-weight: 600;">Team Delta</div>
+            <span class="badge" style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: var(--glass-bg);">Ended</span>
+          </div>
+          <div style="font-size: 0.7rem; color: var(--color-text-muted); margin-bottom: var(--spacing-xs);">15 tokens • Moon Shot</div>
+          <div style="font-size: 0.75rem; color: #09C285; font-weight: 600;">Rank: #8 • +$1,200</div>
         </div>
       </div>
-      
-      <div style="padding: var(--spacing-sm); background: var(--glass-bg); border-radius: 8px; border-left: 3px solid var(--color-text-muted); opacity: 0.7;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xs);">
-          <div style="font-size: 0.85rem; font-weight: 600;">Team Beta</div>
-          <span class="badge" style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: var(--glass-bg);">Ended</span>
-        </div>
-        <div style="font-size: 0.7rem; color: var(--color-text-muted); margin-bottom: var(--spacing-xs);">15 tokens • Crypto Sprint</div>
-        <div style="font-size: 0.75rem; color: #09C285; font-weight: 600;">Rank: #42 • +$250</div>
-      </div>
-      
-      <div style="padding: var(--spacing-sm); background: var(--glass-bg); border-radius: 8px; border-left: 3px solid var(--color-text-muted); opacity: 0.7;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xs);">
-          <div style="font-size: 0.85rem; font-weight: 600;">Team Gamma</div>
-          <span class="badge" style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: var(--glass-bg);">Ended</span>
-        </div>
-        <div style="font-size: 0.7rem; color: var(--color-text-muted); margin-bottom: var(--spacing-xs);">15 tokens • Daily Duel</div>
-        <div style="font-size: 0.75rem; color: #09C285; font-weight: 600;">Rank: #15 • +$500</div>
-      </div>
-      
-      <button class="btn btn-sm" style="width: 100%; background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--color-text-primary); margin-top: var(--spacing-xs);">
-        View All Teams
-      </button>
     </div>
   `;
 
   infoCardsSection.appendChild(liveCompCard);
-  infoCardsSection.appendChild(marketNewsCard);
   infoCardsSection.appendChild(winnersCard);
   infoCardsSection.appendChild(userTeamsCard);
   container.appendChild(infoCardsSection);
 
-  // Header
+  // Centered Header with title and tagline
   const header = document.createElement('div');
-  header.style.marginBottom = 'var(--spacing-xl)';
+  header.style.cssText = `
+    text-align: center;
+    margin-bottom: var(--spacing-md);
+  `;
   header.innerHTML = `
-    <h1 style="font-size: 2.5rem; margin-bottom: var(--spacing-sm); display: flex; align-items: center; justify-content: center; gap: var(--spacing-md);">
-      <svg width="48" height="48" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <div style="display: flex; align-items: center; justify-content: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-xs);">
+      <svg width="36" height="36" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="team-grad-page" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" style="stop-color:#09C285"/>
@@ -290,83 +379,80 @@ export function createDreamTeam() {
         <path d="M8 48C8 40 11 36 16 36C21 36 24 40 24 48" fill="url(#team-grad-page)" opacity="0.8"/>
         <circle cx="48" cy="26" r="5" fill="url(#team-grad-page)" opacity="0.8"/>
         <path d="M40 48C40 40 43 36 48 36C53 36 56 40 56 48" fill="url(#team-grad-page)" opacity="0.8"/>
-        <circle cx="10" cy="30" r="4" fill="url(#team-grad-page)" opacity="0.6"/>
-        <path d="M4 48C4 42 6 38 10 38C14 38 16 42 16 48" fill="url(#team-grad-page)" opacity="0.6"/>
-        <circle cx="54" cy="30" r="4" fill="url(#team-grad-page)" opacity="0.6"/>
-        <path d="M48 48C48 42 50 38 54 38C58 38 60 42 60 48" fill="url(#team-grad-page)" opacity="0.6"/>
       </svg>
-      Dream Team
-    </h1>
-    <p style="color: var(--color-text-secondary); font-size: 1.125rem; margin-bottom: var(--spacing-md); text-align: center;">
-      Build your ultimate crypto portfolio of 15 tokens
-    </p>
+      <h1 style="font-size: 2rem; margin: 0;">Dream Team</h1>
+    </div>
+    <p style="color: var(--color-text-secondary); font-size: 1rem; margin: 0;">Build your ultimate crypto portfolio of 15 tokens</p>
   `;
   container.appendChild(header);
 
-  // Filter and Search Bar with Selection Status
-  const filterSearchBar = document.createElement('div');
-  filterSearchBar.style.cssText = `
+  // Controls row - Categories on left, Search and selection on right
+  const controlsRow = document.createElement('div');
+  controlsRow.id = 'dream-team-controls';
+  controlsRow.style.cssText = `
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
     margin-bottom: var(--spacing-lg);
     gap: var(--spacing-md);
+    flex-wrap: wrap;
+    scroll-margin-top: 80px;
   `;
 
-  // Category filters on the left
+  // Left section - Category filters
   const categoryFilters = document.createElement('div');
   categoryFilters.style.cssText = `
     display: flex;
-    gap: var(--spacing-sm);
+    gap: 6px;
     flex-wrap: wrap;
   `;
   categoryFilters.innerHTML = `
-    <button class="category-btn active" data-category="all" style="padding: 0.5rem 1rem; border-radius: 20px; border: 1px solid var(--color-border); background: var(--color-primary); color: white; cursor: pointer; font-weight: 600; transition: all 0.2s;">All</button>
-    <button class="category-btn" data-category="defi" style="padding: 0.5rem 1rem; border-radius: 20px; border: 1px solid var(--color-border); background: var(--color-bg-secondary); color: var(--color-text-primary); cursor: pointer; font-weight: 600; transition: all 0.2s;">DeFi</button>
-    <button class="category-btn" data-category="layer2" style="padding: 0.5rem 1rem; border-radius: 20px; border: 1px solid var(--color-border); background: var(--color-bg-secondary); color: var(--color-text-primary); cursor: pointer; font-weight: 600; transition: all 0.2s;">Layer 2</button>
-    <button class="category-btn" data-category="gaming" style="padding: 0.5rem 1rem; border-radius: 20px; border: 1px solid var(--color-border); background: var(--color-bg-secondary); color: var(--color-text-primary); cursor: pointer; font-weight: 600; transition: all 0.2s;">Gaming</button>
-    <button class="category-btn" data-category="meme" style="padding: 0.5rem 1rem; border-radius: 20px; border: 1px solid var(--color-border); background: var(--color-bg-secondary); color: var(--color-text-primary); cursor: pointer; font-weight: 600; transition: all 0.2s;">Meme</button>
+    <button class="category-btn active" data-category="all" style="padding: 0.375rem 0.875rem; border-radius: 12px; border: 1px solid var(--color-border); background: var(--color-primary); color: white; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s;">All</button>
+    <button class="category-btn" data-category="defi" style="padding: 0.375rem 0.875rem; border-radius: 12px; border: 1px solid var(--color-border); background: var(--color-bg-secondary); color: var(--color-text-primary); cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s;">DeFi</button>
+    <button class="category-btn" data-category="layer2" style="padding: 0.375rem 0.875rem; border-radius: 12px; border: 1px solid var(--color-border); background: var(--color-bg-secondary); color: var(--color-text-primary); cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s;">Layer 2</button>
+    <button class="category-btn" data-category="gaming" style="padding: 0.375rem 0.875rem; border-radius: 12px; border: 1px solid var(--color-border); background: var(--color-bg-secondary); color: var(--color-text-primary); cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s;">Gaming</button>
+    <button class="category-btn" data-category="meme" style="padding: 0.375rem 0.875rem; border-radius: 12px; border: 1px solid var(--color-border); background: var(--color-bg-secondary); color: var(--color-text-primary); cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s;">Meme</button>
   `;
 
-  // Search bar and selection status on the right
+  // Right section - Search and selection status
   const rightSection = document.createElement('div');
   rightSection.style.cssText = `
     display: flex;
     align-items: center;
-    gap: var(--spacing-md);
+    gap: var(--spacing-sm);
+    flex-shrink: 0;
   `;
 
   // Search bar
   const searchBar = document.createElement('div');
-  searchBar.style.cssText = `
-    transition: all 0.3s ease;
-  `;
+  searchBar.style.cssText = `transition: all 0.3s ease;`;
   searchBar.innerHTML = `
-    <input type="text" class="input" placeholder="Search cryptocurrencies..." id="search-input" style="width: 250px; border-radius: 24px; padding: 0.875rem 1.25rem;" />
+    <input type="text" class="input" placeholder="Search tokens..." id="search-input" style="width: 180px; border-radius: 12px; padding: 0.5rem 1rem; font-size: 0.85rem; border: 1px solid var(--color-border); background: var(--color-bg-secondary);" />
   `;
 
-  // Selection badge (initially hidden, will slide in)
+  // Selection badge (initially hidden)
   const selectionBadge = document.createElement('div');
   selectionBadge.id = 'selected-badge';
   selectionBadge.className = 'badge badge-primary';
   selectionBadge.style.cssText = `
-    font-size: 0.9rem;
-    padding: 0.625rem 1.5rem;
-    border-radius: 14px;
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
     font-weight: 600;
     opacity: 0;
     transform: translateX(20px);
     transition: all 0.3s ease;
     display: none;
+    white-space: nowrap;
   `;
-  selectionBadge.innerHTML = `Selected: <span id="selected-count">0</span>/15`;
+  selectionBadge.innerHTML = `<span id="selected-count">0</span>/15`;
 
   rightSection.appendChild(searchBar);
   rightSection.appendChild(selectionBadge);
 
-  filterSearchBar.appendChild(categoryFilters);
-  filterSearchBar.appendChild(rightSection);
-  container.appendChild(filterSearchBar);
+  controlsRow.appendChild(categoryFilters);
+  controlsRow.appendChild(rightSection);
+  container.appendChild(controlsRow);
 
   // Scrollable token grid section
   const tokenGridWrapper = document.createElement('div');
@@ -467,6 +553,7 @@ export function createDreamTeam() {
   return page;
 }
 
+
 // Initialize from global state (preserves team when navigating away and back)
 let selectedTeam = getSelectedTeam();
 
@@ -508,8 +595,13 @@ async function performSearch(query, gridContainer) {
     const tokens = await searchTokens(query);
     if (tokens.length === 0) {
       gridContainer.innerHTML = `
-        <div style="grid-column: 1 / -1; text-align: center; padding: var(--spacing-2xl); color: var(--color-text-secondary);">
-          No tokens found for "${query}"
+        <div style="grid-column: 1 / -1; text-align: center; padding: var(--spacing-2xl);">
+          <div style="font-size: 1.25rem; font-weight: 700; color: var(--color-danger); margin-bottom: var(--spacing-sm);">
+            YOU CANNOT CHOOSE THIS TOKEN IN THE DREAM TEAM
+          </div>
+          <div style="font-size: 0.875rem; color: var(--color-text-secondary);">
+            Try searching for a different cryptocurrency from our available list.
+          </div>
         </div>
       `;
     } else {
@@ -593,82 +685,60 @@ function createTokenCard(token) {
   if (isSelected) {
     if (direction === 'UP') card.classList.add('selected-up');
     else if (direction === 'DOWN') card.classList.add('selected-down');
-    else card.classList.add('selected'); // Fallback
+    else card.classList.add('selected');
   }
 
-  // Truncate coin name if longer than 9 characters
-  const displayName = token.name.length > 9 ? token.name.substring(0, 9) + '...' : token.name;
+  // Hide coin name if longer than 8 characters
+  const showName = token.name.length <= 8;
 
+  // 💡 FIXED WIDTH FOR PRICE COLUMN: 90px ensures consistent right alignment
   card.innerHTML = `
     <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
       <img src="${token.image}" alt="${token.name}" class="lifted-element" style="width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;" />
-      <div style="flex: 1; min-width: 0;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; gap: var(--spacing-lg);">
-          <div class="lifted-element" style="font-weight: 700; font-size: 1rem;">${token.symbol.toUpperCase()}</div>
-          <div class="token-current-price" style="font-size: 0.95rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${formatCurrency(token.currentPrice)}</div>
+      <div style="width: 55px; flex-shrink: 0;">
+        <div class="lifted-element" style="font-weight: 700; font-size: 1rem; ${showName ? 'margin-bottom: 2px;' : ''}">${token.symbol.toUpperCase()}</div>
+        ${showName ? `<div style="font-size: 0.75rem; color: var(--color-text-muted);">${token.name}</div>` : ''}
+      </div>
+      <!-- ✅ FIXED-WIDTH RIGHT COLUMN -->
+      <div style="width: 90px; text-align: right; flex-shrink: 0;">
+        <div class="token-current-price" style="font-size: 0.95rem; font-weight: 700; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+          ${formatCurrency(token.currentPrice)}
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div style="font-size: 0.75rem; color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${displayName}</div>
-          <div class="token-price-change ${changeClass}" style="font-size: 0.8rem; white-space: nowrap; margin-left: var(--spacing-sm);">
-            ${formatPercentage(token.priceChange24h)}
-          </div>
+        <div class="token-price-change ${changeClass}" style="font-size: 0.8rem; white-space: nowrap;">
+          ${formatPercentage(token.priceChange24h)}
         </div>
       </div>
       ${isSelected ? `<div class="badge ${direction === 'UP' ? 'badge-success' : 'badge-danger'}" style="padding: 0.25rem 0.5rem; font-size: 0.7rem; flex-shrink: 0; margin-left: var(--spacing-sm);">${direction === 'UP' ? 'UP' : 'Down'}</div>` : ''}
     </div>
-    
     <!-- Split Selection Overlay -->
     <div class="selection-overlay">
-      <div class="selection-overlay-left" onclick="event.stopPropagation(); window.toggleTokenSelection('${token.id}', 'DOWN')">
-        <span class="selection-overlay-text" style="display: flex; flex-direction: column; align-items: center; gap: -8px;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: -6px; opacity: 0.5;">
-            <polyline points="19 12 12 19 5 12"></polyline>
-          </svg>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="19 12 12 19 5 12"></polyline>
-          </svg>
-        </span>
-      </div>
-      <div class="selection-overlay-right" onclick="event.stopPropagation(); window.toggleTokenSelection('${token.id}', 'UP')">
-        <span class="selection-overlay-text" style="display: flex; flex-direction: column; align-items: center; gap: -8px;">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="5 12 12 5 19 12"></polyline>
-          </svg>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-top: -6px; opacity: 0.5;">
-            <polyline points="5 12 12 5 19 12"></polyline>
-          </svg>
-        </span>
-      </div>
+      <div class="selection-overlay-left" onclick="event.stopPropagation();"></div>
+      <div class="selection-overlay-right" onclick="event.stopPropagation();"></div>
     </div>
   `;
 
-  // Attach token object to window for access via inline onclick (since specific token object isn't serializable easily in HTML)
-  // Actually, better pattern is to attach event listener to elements, but logic is complex. 
-  // Let's attach listeners to the overlay elements directly using closure
+  // Attach proper event listeners (not inline onclick)
   const leftOverlay = card.querySelector('.selection-overlay-left');
   const rightOverlay = card.querySelector('.selection-overlay-right');
 
   if (leftOverlay) {
-    leftOverlay.onclick = (e) => {
+    leftOverlay.addEventListener('click', (e) => {
       e.stopPropagation();
-      toggleTokenSelection(token, card, 'DOWN');
-    };
+      toggleTokeanSelection(token, card, 'DOWN');
+    });
   }
-
   if (rightOverlay) {
-    rightOverlay.onclick = (e) => {
+    rightOverlay.addEventListener('click', (e) => {
       e.stopPropagation();
       toggleTokenSelection(token, card, 'UP');
-    };
+    });
   }
 
-  // Fallback click on card itself (maybe just toggle off if selected?)
-  card.onclick = (e) => {
-    // If clicking card body (not overlay), toggle selection if already selected
-    if (isSelected) {
+  card.addEventListener('click', (e) => {
+    if (isSelected && !e.target.closest('.selection-overlay')) {
       toggleTokenSelection(token, card, null);
     }
-  };
+  });
 
   return card;
 }
@@ -771,19 +841,23 @@ function updateUI() {
   const tokenGrid = document.getElementById('token-grid');
   const infoCards = document.querySelector('.dream-team-page .container > div:first-child');
 
+  // Get header elements for layout transformation
+  const headerEl = containerEl?.querySelector('div[style*="text-align: center"]');
+  const controlsRow = headerEl?.nextElementSibling;
+
   if (selectedTeam.length > 0 && pageEl && containerEl && tokenGridWrapper) {
     // Fixed header mode - hide info cards, only token grid scrolls
     pageEl.style.cssText = `
       display: flex;
       flex-direction: column;
-      height: calc(100vh - 80px);
+      height: calc(100vh - 64px);
       overflow: hidden;
     `;
     containerEl.style.cssText = `
       display: flex;
       flex-direction: column;
       height: 100%;
-      padding: var(--spacing-xl) var(--spacing-md) 0;
+      padding: var(--spacing-sm) var(--spacing-md) 0;
       transition: all 0.3s ease;
     `;
     tokenGridWrapper.style.cssText = `
@@ -791,6 +865,81 @@ function updateUI() {
       overflow-y: auto;
       padding: var(--spacing-lg) var(--spacing-sm) var(--spacing-lg) 0;
     `;
+
+    // Transform header to compact single-line layout
+    if (headerEl) {
+      headerEl.style.cssText = `
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0;
+        gap: var(--spacing-md);
+      `;
+      // Hide tagline, show compact title
+      const titleDiv = headerEl.querySelector('div[style*="justify-content: center"]');
+      const tagline = headerEl.querySelector('p');
+      if (titleDiv) {
+        titleDiv.style.justifyContent = 'flex-start';
+        titleDiv.style.marginBottom = '0';
+        const h1 = titleDiv.querySelector('h1');
+        if (h1) h1.style.fontSize = '1.5rem';
+        const svg = titleDiv.querySelector('svg');
+        if (svg) {
+          svg.setAttribute('width', '28');
+          svg.setAttribute('height', '28');
+        }
+      }
+      if (tagline) tagline.style.display = 'none';
+
+      // Move controls into header
+      if (controlsRow) {
+        controlsRow.style.display = 'none';
+        // Move category filters and right section into header
+        const categories = controlsRow.querySelector('div:first-child');
+        const rightSection = controlsRow.querySelector('div:last-child');
+        if (categories && !headerEl.querySelector('.category-btn')) {
+          const categoriesClone = categories.cloneNode(true);
+          categoriesClone.id = 'compact-categories';
+          headerEl.appendChild(categoriesClone);
+          // Re-attach event listeners to cloned buttons
+          categoriesClone.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              categoriesClone.querySelectorAll('.category-btn').forEach(b => {
+                b.style.background = 'var(--color-bg-secondary)';
+                b.style.color = 'var(--color-text-primary)';
+              });
+              btn.style.background = 'var(--color-primary)';
+              btn.style.color = 'white';
+              const category = btn.dataset.category;
+              const tokenGridEl = document.getElementById('token-grid');
+              if (tokenGridEl) filterByCategory(category, tokenGridEl);
+            });
+          });
+        }
+        if (rightSection && !headerEl.querySelector('#search-input')) {
+          const rightClone = rightSection.cloneNode(true);
+          rightClone.id = 'compact-right';
+          headerEl.appendChild(rightClone);
+          // Re-attach search listener
+          const searchInput = rightClone.querySelector('#search-input');
+          if (searchInput) {
+            searchInput.id = 'search-input'; // Keep same ID
+            let searchTimeout;
+            searchInput.addEventListener('input', (e) => {
+              clearTimeout(searchTimeout);
+              searchTimeout = setTimeout(() => {
+                const tokenGridEl = document.getElementById('token-grid');
+                if (e.target.value.trim() && tokenGridEl) {
+                  performSearch(e.target.value, tokenGridEl);
+                } else if (tokenGridEl) {
+                  loadTokens(tokenGridEl);
+                }
+              }, 300);
+            });
+          }
+        }
+      }
+    }
 
     // Add custom scrollbar styling
     const scrollbarStyle = document.createElement('style');
@@ -831,6 +980,38 @@ function updateUI() {
       transition: all 0.3s ease;
     `;
     tokenGridWrapper.style.cssText = 'display: block;';
+
+    // Revert header to centered layout
+    if (headerEl) {
+      headerEl.style.cssText = `
+        text-align: center;
+        margin-bottom: var(--spacing-md);
+      `;
+      const titleDiv = headerEl.querySelector('div[style*="flex-start"], div[style*="justify-content"]');
+      const tagline = headerEl.querySelector('p');
+      if (titleDiv) {
+        titleDiv.style.justifyContent = 'center';
+        titleDiv.style.marginBottom = 'var(--spacing-xs)';
+        const h1 = titleDiv.querySelector('h1');
+        if (h1) h1.style.fontSize = '2rem';
+        const svg = titleDiv.querySelector('svg');
+        if (svg) {
+          svg.setAttribute('width', '36');
+          svg.setAttribute('height', '36');
+        }
+      }
+      if (tagline) tagline.style.display = 'block';
+
+      // Remove compact elements and show original controls
+      const compactCategories = headerEl.querySelector('#compact-categories');
+      const compactRight = headerEl.querySelector('#compact-right');
+      if (compactCategories) compactCategories.remove();
+      if (compactRight) compactRight.remove();
+    }
+    if (controlsRow) {
+      controlsRow.style.display = 'flex';
+    }
+
     // Show info cards with grid layout
     if (infoCards) {
       infoCards.style.display = 'grid';
@@ -858,29 +1039,28 @@ function updateUI() {
     unselectAllBtn = document.createElement('button');
     unselectAllBtn.id = 'unselect-all-btn';
     unselectAllBtn.innerHTML = `
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="18" y1="6" x2="6" y2="18"></line>
         <line x1="6" y1="6" x2="18" y2="18"></line>
       </svg>
-      Unselect All
+      Clear
     `;
     unselectAllBtn.style.cssText = `
       display: none;
       align-items: center;
-      gap: 6px;
-      padding: 0.625rem 1.5rem;
-      border-radius: 14px;
+      gap: 4px;
+      padding: 0.5rem 0.75rem;
+      border-radius: 12px;
       border: none;
       background: rgba(255, 77, 79, 0.15);
       color: var(--color-danger);
-      font-size: 0.9rem;
+      font-size: 0.8rem;
       font-weight: 600;
       line-height: 1.5;
-      height: 42px; /* Explicit height */
+      height: 36px;
       box-sizing: border-box;
       cursor: pointer;
       transition: all 0.2s ease;
-      margin-left: var(--spacing-sm);
     `;
     unselectAllBtn.onmouseover = () => {
       unselectAllBtn.style.background = 'rgba(255, 77, 79, 0.2)';
@@ -888,29 +1068,37 @@ function updateUI() {
     unselectAllBtn.onmouseout = () => {
       unselectAllBtn.style.background = 'rgba(255, 77, 79, 0.15)';
     };
-    unselectAllBtn.onclick = () => {
-      selectedTeam = [];
-      updateUI();
-      // Reset card styles
-      document.querySelectorAll('.token-card').forEach(card => card.classList.remove('selected'));
-      // Re-render cards to remove badges
-      const tokenGrid = document.getElementById('token-grid');
-      // If we had a way to just update selection state without full re-render that would be better,
-      // but triggering a search/filter update is easiest way to refresh grid
-      const searchInput = document.getElementById('search-input');
-      if (searchInput) searchInput.dispatchEvent(new Event('input'));
-
-      // If we're in "all" category, we might need to manually refresh if search is empty
-      // But for now let's just manually fix the DOM for visible cards
-      document.querySelectorAll('.token-card .badge-success').forEach(el => el.remove());
-    };
 
     // Insert before badge if possible
-    const badgeParent = document.getElementById('selected-badge'); // Renamed to avoid conflict
+    const badgeParent = document.getElementById('selected-badge');
     if (badgeParent && badgeParent.parentNode) {
       badgeParent.parentNode.insertBefore(unselectAllBtn, badgeParent);
     }
   }
+
+  // Always re-attach onclick to ensure it works after layout changes
+  unselectAllBtn.onclick = () => {
+    // Clear the selected team
+    selectedTeam = [];
+    syncToGlobalState();
+
+    // Reset all card styles
+    document.querySelectorAll('.token-card').forEach(card => {
+      card.classList.remove('selected', 'selected-up', 'selected-down');
+      // Remove any direction badges
+      const badge = card.querySelector('.badge');
+      if (badge) badge.remove();
+    });
+
+    // Reload tokens to refresh the grid
+    const tokenGrid = document.getElementById('token-grid');
+    if (tokenGrid) {
+      loadTokens(tokenGrid);
+    }
+
+    // Update UI to revert layout
+    updateUI();
+  };
 
   if (badge) {
     if (selectedTeam.length > 0) {
@@ -923,20 +1111,20 @@ function updateUI() {
         badge.style.transform = 'translateX(0)';
       }, 10);
 
-      badge.style.fontSize = '0.9rem';
-      badge.style.padding = '0.625rem 1.5rem';
-      badge.style.borderRadius = '14px';
+      badge.style.fontSize = '0.8rem';
+      badge.style.padding = '0.5rem 1rem';
+      badge.style.borderRadius = '12px';
       badge.style.fontWeight = '600';
       badge.style.lineHeight = '1.5';
-      badge.style.height = '42px';
+      badge.style.height = '36px';
       badge.style.boxSizing = 'border-box';
       badge.style.display = 'inline-flex';
       badge.style.alignItems = 'center';
 
       // Update search placeholder and width
       if (searchInput) {
-        searchInput.placeholder = 'Search for token you want to add';
-        searchInput.style.width = '300px';
+        searchInput.placeholder = 'Search tokens...';
+        searchInput.style.width = '180px';
       }
 
       if (selectedTeam.length === 15) {
@@ -957,8 +1145,8 @@ function updateUI() {
 
       // Reset search placeholder and width
       if (searchInput) {
-        searchInput.placeholder = 'Search cryptocurrencies...';
-        searchInput.style.width = '250px';
+        searchInput.placeholder = 'Search...';
+        searchInput.style.width = '160px';
       }
 
       // Hide after animation completes

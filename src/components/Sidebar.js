@@ -22,45 +22,110 @@ export function createSidebar() {
           <div class="sidebar-links">
             <a href="#dream-team" class="sidebar-link" data-page="dream-team">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
+                <style>
+                  @keyframes team-bounce {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-2px); }
+                  }
+                  .sidebar-link.active .dream-team-filled { 
+                    fill: #09C285; 
+                    stroke: #09C285; 
+                    fill-opacity: 0.2; 
+                    animation: team-bounce 2s infinite ease-in-out;
+                  }
+                  .sidebar-link.active .dream-team-outline {
+                    animation: team-bounce 2s infinite ease-in-out 0.2s;
+                  }
+                  .dream-team-filled, .dream-team-outline { transition: all 0.2s; }
+                </style>
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" class="dream-team-outline"></path>
+                <circle cx="9" cy="7" r="4" class="dream-team-filled"></circle>
                 <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" class="dream-team-filled"></path>
               </svg>
               <span>Dream Team</span>
             </a>
             
             <a href="#crypto-duel" class="sidebar-link" data-page="crypto-duel">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <text x="12" y="16" font-size="12" font-weight="bold" text-anchor="middle" fill="currentColor" stroke="none">VS</text>
+                <style>
+                  @keyframes vs-pulse {
+                    0%, 100% { transform: scale(1); }
+                    50% { transform: scale(1.2); }
+                  }
+                  .vs-text { 
+                    fill: currentColor; 
+                    stroke: none; 
+                    transition: fill 0.2s; 
+                    transform-origin: center; 
+                    transform-box: fill-box;
+                  }
+                  .sidebar-link.active .vs-text { 
+                    fill: #09C285; 
+                    animation: vs-pulse 1.5s infinite ease-in-out;
+                  }
+                </style>
+                <text x="12" y="16" font-size="12" font-weight="bold" text-anchor="middle" class="vs-text">VS</text>
               </svg>
               <span>Crypto Duel</span>
             </a>
             
             <a href="#predict-candle" class="sidebar-link" data-page="predict-candle">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2">
-                <line x1="5" y1="6" x2="5" y2="18" stroke="#09C285" stroke-width="2.5"/>
-                <line x1="10" y1="10" x2="10" y2="20" stroke="#FF4D4F" stroke-width="2.5"/>
-                <line x1="15" y1="4" x2="15" y2="16" stroke="#09C285" stroke-width="2.5"/>
-                <line x1="20" y1="8" x2="20" y2="18" stroke="#FF4D4F" stroke-width="2.5"/>
+                <style>
+                  @keyframes candle-fluctuate {
+                    0%, 100% { transform: scaleY(1); }
+                    50% { transform: scaleY(0.7); }
+                  }
+                  .candle-line { 
+                    stroke: currentColor; 
+                    transition: stroke 0.2s; 
+                    transform-origin: bottom;
+                    transform-box: fill-box;
+                  }
+                  .sidebar-link.active .candle-green { 
+                    stroke: #09C285; 
+                    animation: candle-fluctuate 1.5s infinite ease-in-out alternate;
+                  }
+                  .sidebar-link.active .candle-red { 
+                    stroke: #FF4D4F; 
+                    animation: candle-fluctuate 2s infinite ease-in-out alternate-reverse;
+                  }
+                </style>
+                <line x1="5" y1="6" x2="5" y2="18" stroke-width="2.5" class="candle-line candle-green"/>
+                <line x1="10" y1="10" x2="10" y2="20" stroke-width="2.5" class="candle-line candle-red"/>
+                <line x1="15" y1="4" x2="15" y2="16" stroke-width="2.5" class="candle-line candle-green"/>
+                <line x1="20" y1="8" x2="20" y2="18" stroke-width="2.5" class="candle-line candle-red"/>
               </svg>
               <span>Predict Candle</span>
             </a>
             
             <a href="#time-based" class="sidebar-link" data-page="time-based">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <!-- Hourglass top -->
-                <path d="M6 2h12v4l-6 6 6 6v4H6v-4l6-6-6-6V2z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                <!-- Sand in top -->
-                <path d="M8 4h8l-4 4z" fill="currentColor" opacity="0.5"/>
+                <style>
+                  @keyframes tick-sidebar {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                  }
+                  .tick-hand-sidebar {
+                    transform-origin: 12px 14px;
+                  }
+                  /* Animate only when active */
+                  .sidebar-link.active .tick-hand-sidebar {
+                    animation: tick-sidebar 2s steps(60) infinite;
+                  }
+                </style>
+                <circle cx="12" cy="14" r="9" />
+                <path d="M12 5V2M10 2h4" />
+                <line x1="12" y1="14" x2="12" y2="8" stroke="currentColor" stroke-width="1.5" class="tick-hand-sidebar"/>
               </svg>
-              <span>Time-Based Action</span>
+              <span>1min Frenzy</span>
             </a>
           </div>
         </div>
         
         <!-- Prediction Category -->
-        <div class="sidebar-category" style="margin-top: var(--spacing-md);">
+        <div class="sidebar-category" style="margin-top: var(--spacing-md); border-top: 1px solid var(--glass-border); padding-top: var(--spacing-md);">
           <div class="sidebar-category-header">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2">
               <circle cx="12" cy="12" r="10"></circle>
@@ -104,6 +169,24 @@ export function createSidebar() {
           <span>Crypto Leagues Team</span>
         </a>
       </div>
+      
+      <!-- Live data indicator - pinned to bottom -->
+      <div class="sidebar-live-indicator" style="
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: var(--spacing-sm) var(--spacing-md);
+        background: rgba(0, 0, 0, 0.2);
+        border-top: 1px solid rgba(255,255,255,0.05);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      ">
+        <div style="width: 6px; height: 6px; background: #09C285; border-radius: 50%; animation: pulse 2s infinite;"></div>
+        <span style="font-size: 0.55rem; color: var(--color-text-muted); opacity: 0.7;">Prices & data live from Binance</span>
+      </div>
     </div>
   `;
 
@@ -130,10 +213,29 @@ export function initSidebar() {
     });
   });
 
-  // Set initial active state based on current hash
-  const currentHash = window.location.hash.slice(1) || 'home';
-  const activeLink = document.querySelector(`.sidebar-link[data-page="${currentHash}"]`);
-  if (activeLink) {
-    activeLink.classList.add('active');
-  }
+  // Function to update active state based on current hash
+  const updateActiveState = () => {
+    // Remove leading slash and hash from the path
+    let currentHash = window.location.hash.slice(1) || 'home';
+    // Remove leading slash if present (e.g., '/dream-team' -> 'dream-team')
+    if (currentHash.startsWith('/')) {
+      currentHash = currentHash.slice(1);
+    }
+
+    // Remove active class from all links first
+    links.forEach(l => l.classList.remove('active'));
+
+    // Find and activate the matching link
+    const activeLink = document.querySelector(`.sidebar-link[data-page="${currentHash}"]`);
+    if (activeLink) {
+      activeLink.classList.add('active');
+    }
+  };
+
+  // Set initial active state
+  updateActiveState();
+
+  // Listen for hash changes to update active state
+  window.addEventListener('hashchange', updateActiveState);
+  window.addEventListener('popstate', updateActiveState);
 }

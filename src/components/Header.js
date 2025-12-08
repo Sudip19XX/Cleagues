@@ -57,8 +57,9 @@ export function createHeader() {
     transition: all 0.3s ease;
   `;
 
-  // Check if dark mode is already enabled (from localStorage)
-  const isDarkMode = localStorage.getItem('darkMode') === 'true';
+  // Check if dark mode should be enabled (default to dark mode)
+  // Dark mode is enabled by default unless explicitly set to 'false'
+  const isDarkMode = localStorage.getItem('darkMode') !== 'false';
   if (isDarkMode) {
     document.documentElement.classList.add('dark-mode');
     document.body.classList.add('dark-mode');

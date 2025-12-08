@@ -115,15 +115,15 @@
 
   /* Background Colors */
   --color-bg-primary: #0a0a0f;
-  --color-bg-secondary: #12121a;
-  --color-bg-tertiary: #1a1a25;
+  --color-bg-secondary: #0f212e;
+  --color-bg-tertiary: #1a2f3d;
 
   /* Neutral Colors */
   --color-border: rgba(240, 240, 240, 0.1);
   --color-border-light: rgba(240, 240, 240, 0.05);
 
   /* Glass Effect */
-  --glass-bg: rgba(20, 20, 30, 0.9);
+  --glass-bg: rgba(15, 33, 46, 0.95);
   --glass-border: rgba(240, 240, 240, 0.1);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
 }
@@ -216,6 +216,24 @@ body.dark-mode .token-card {
 :root.dark-mode [style*="background: var(--color-bg-secondary)"],
 body.dark-mode [style*="background: var(--color-bg-secondary)"] {
   background: rgba(45, 45, 70, 0.8) !important;
+}
+
+/* Header glass effect in dark mode */
+:root.dark-mode .header,
+body.dark-mode .header {
+  background: rgba(15, 33, 46, 0.85) !important;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: none !important;
+  box-shadow:
+    0 4px 30px rgba(0, 0, 0, 0.5),
+    0 8px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Dark mode header bottom edge blur effect */
+:root.dark-mode .header::after,
+body.dark-mode .header::after {
+  background: linear-gradient(to bottom, rgba(15, 33, 46, 0.5), transparent) !important;
 }
 
 /* Base Styles */
