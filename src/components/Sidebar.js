@@ -147,7 +147,6 @@ export function createSidebar() {
               <span>Crypto Duel</span>
             </a>
 
-
           </div>
         </div>
         
@@ -158,13 +157,14 @@ export function createSidebar() {
               <circle cx="12" cy="12" r="10"></circle>
               <path d="M12 16v-4"></path>
               <path d="M12 8h.01"></path>
-              <path d="M8 9c0-2.2 1.8-4 4-4s4 1.8 4 4c0 1.5-.8 2.8-2 3.5"></path>
             </svg>
             <span style="white-space: nowrap; font-size: 0.85rem;">Prediction</span>
           </div>
           
           <div class="sidebar-links">
-            <span style="font-size: 0.75rem; color: var(--color-text-muted); padding: 0.5rem 0.75rem; display: block;">Coming Soon</span>
+            <div style="padding: 8px 12px; font-size: 0.75rem; color: var(--color-text-muted); opacity: 0.7; font-style: italic;">
+              Coming Soon...
+            </div>
           </div>
         </div>
       </div>

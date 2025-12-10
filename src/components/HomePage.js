@@ -23,6 +23,14 @@ export function createHomePage() {
   const stats = createStatsSection();
   page.appendChild(stats);
 
+  // Social Sticky Bar
+  const socialBar = createSocialBar();
+  page.appendChild(socialBar);
+
+  // Mouse glow effect
+  const mouseGlow = createMouseGlow();
+  page.appendChild(mouseGlow);
+
   return page;
 }
 
@@ -302,39 +310,279 @@ function createBackgroundLines() {
     z-index: -1;
     overflow: hidden;
     pointer-events: none;
-    opacity: 0.8;
   `;
 
-  // Grid Lines
+  // Grid Lines - smoother animation with reduced opacity and larger grid
   bg.innerHTML = `
-    <div style="
+    <div class="grid-container" style="
       position: absolute;
-      width: 200%;
-      height: 200%;
-      top: -50%;
-      left: -50%;
+      width: 400%;
+      height: 400%;
+      top: -150%;
+      left: -150%;
       background-image: 
-        linear-gradient(rgba(9, 194, 133, 0.4) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(9, 194, 133, 0.4) 1px, transparent 1px);
-      background-size: 40px 40px;
-      transform: perspective(500px) rotateX(60deg);
-      animation: gridMove 20s linear infinite;
+        linear-gradient(rgba(9, 194, 133, 0.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(9, 194, 133, 0.12) 1px, transparent 1px);
+      background-size: 50px 50px;
+      transform: perspective(1000px) rotateX(70deg);
+      animation: gridMove 50s linear infinite;
+      will-change: transform;
     "></div>
+    
+    <!-- Subtle fade at edges only -->
     <div style="
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: radial-gradient(circle at center, transparent 0%, var(--color-bg-primary) 70%);
+      background: 
+        radial-gradient(ellipse 120% 100% at center 100%, transparent 0%, transparent 60%, var(--color-bg-primary) 90%),
+        linear-gradient(to bottom, var(--color-bg-primary) 0%, transparent 5%, transparent 95%, var(--color-bg-primary) 100%),
+        linear-gradient(to right, var(--color-bg-primary) 0%, transparent 5%, transparent 95%, var(--color-bg-primary) 100%);
+      pointer-events: none;
     "></div>
+    
     <style>
       @keyframes gridMove {
-        0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
-        100% { transform: perspective(500px) rotateX(60deg) translateY(40px); }
+        0% { transform: perspective(1000px) rotateX(70deg) translateY(0); }
+        100% { transform: perspective(1000px) rotateX(70deg) translateY(50px); }
       }
     </style>
   `;
 
   return bg;
+}
+
+function createSocialBar() {
+  const bar = document.createElement('div');
+  bar.className = 'social-sticky-bar';
+  bar.style.cssText = `
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    z-index: 100;
+    padding: 16px 12px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-right: none;
+    border-radius: 16px 0 0 16px;
+  `;
+
+  const socials = [
+    {
+      name: 'X (Twitter)',
+      url: 'https://x.com/leaguesdotfun',
+      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 4l11.733 16h4.267l-11.733 -16z"/>
+        <path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"/>
+      </svg>`
+    },
+    {
+      name: 'Discord',
+      url: 'https://discord.gg/cryptoleagues',
+      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 12a1 1 0 1 0 2 0a1 1 0 0 0 -2 0"/>
+        <path d="M14 12a1 1 0 1 0 2 0a1 1 0 0 0 -2 0"/>
+        <path d="M15.5 17c0 1 1.5 3 2 3c1.5 0 2.833 -1.667 3.5 -3c.667 -1.667 .5 -5.833 -1.5 -11.5c-1.457 -1.015 -3 -1.34 -4.5 -1.5l-.972 1.923a11.913 11.913 0 0 0 -4.053 0l-.975 -1.923c-1.5 .16 -3.043 .485 -4.5 1.5c-2 5.667 -2.167 9.833 -1.5 11.5c.667 1.333 2 3 3.5 3c.5 0 2 -2 2 -3"/>
+        <path d="M7 16.5c3.5 1 6.5 1 10 0"/>
+      </svg>`
+    },
+    {
+      name: 'Telegram',
+      url: 'https://t.me/cryptoleagues',
+      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M15 10l-4 4l6 6l4 -16l-18 7l4 2l2 6l3 -4"/>
+      </svg>`
+    },
+    {
+      name: 'Docs',
+      url: 'https://docs.cryptoleagues.io',
+      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 3v4a1 1 0 0 0 1 1h4"/>
+        <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/>
+        <path d="M9 9l1 0"/>
+        <path d="M9 13l6 0"/>
+        <path d="M9 17l6 0"/>
+      </svg>`
+    }
+  ];
+
+  bar.innerHTML = `
+    <style>
+      .social-link-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .social-link {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255, 255, 255, 0.5);
+        background: transparent;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        position: relative;
+      }
+      .social-link:hover {
+        color: #09C285;
+        transform: scale(1.15);
+      }
+      .social-link svg {
+        width: 18px;
+        height: 18px;
+      }
+      .social-divider {
+        width: 20px;
+        height: 1px;
+        background: rgba(255, 255, 255, 0.1);
+        margin: 8px 0;
+      }
+      .social-link::before {
+        content: attr(data-tooltip);
+        position: absolute;
+        right: 44px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(0, 0, 0, 0.85);
+        color: white;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s ease;
+        pointer-events: none;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .social-link:hover::before {
+        opacity: 1;
+        visibility: visible;
+        right: 48px;
+      }
+    </style>
+    ${socials.map((social, index) => `
+      <div class="social-link-item">
+        <a href="${social.url}" target="_blank" rel="noopener noreferrer" class="social-link" data-tooltip="${social.name}">
+          ${social.icon}
+        </a>
+        ${index < socials.length - 1 ? '<div class="social-divider"></div>' : ''}
+      </div>
+    `).join('')}
+  `;
+
+  return bar;
+}
+
+function createMouseGlow() {
+  const glow = document.createElement('div');
+  glow.className = 'mouse-glow';
+  glow.style.cssText = `
+    position: fixed;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(9, 194, 133, 0.15) 0%, rgba(9, 194, 133, 0.05) 30%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.3s ease;
+    opacity: 0;
+    will-change: left, top;
+  `;
+
+  let mouseX = 0;
+  let mouseY = 0;
+  let currentX = 0;
+  let currentY = 0;
+  let isVisible = false;
+  let isAnimating = false;
+  let isPageVisible = true;
+  let animationId = null;
+
+  // Smooth animation loop - only runs when needed
+  function animate() {
+    if (!isPageVisible || !isVisible) {
+      isAnimating = false;
+      return;
+    }
+
+    // Smooth interpolation (ease towards mouse position)
+    const dx = mouseX - currentX;
+    const dy = mouseY - currentY;
+
+    currentX += dx * 0.08;
+    currentY += dy * 0.08;
+
+    glow.style.left = currentX + 'px';
+    glow.style.top = currentY + 'px';
+
+    // Stop animating if we're very close to target (within 0.5px)
+    if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
+      isAnimating = false;
+      return;
+    }
+
+    animationId = requestAnimationFrame(animate);
+  }
+
+  // Start animation only if not already running
+  function startAnimation() {
+    if (!isAnimating && isPageVisible && isVisible) {
+      isAnimating = true;
+      animate();
+    }
+  }
+
+  // Track mouse movement
+  document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+
+    if (!isVisible) {
+      isVisible = true;
+      glow.style.opacity = '1';
+    }
+
+    // Start animation when mouse moves
+    startAnimation();
+  });
+
+  // Hide when mouse leaves window
+  document.addEventListener('mouseleave', () => {
+    isVisible = false;
+    glow.style.opacity = '0';
+  });
+
+  // Show when mouse enters
+  document.addEventListener('mouseenter', () => {
+    isVisible = true;
+    glow.style.opacity = '1';
+    startAnimation();
+  });
+
+  // Optimization 2: Pause when page is not visible
+  document.addEventListener('visibilitychange', () => {
+    isPageVisible = !document.hidden;
+
+    if (isPageVisible && isVisible) {
+      // Resume animation when page becomes visible
+      startAnimation();
+    } else if (animationId) {
+      // Cancel animation when page hidden
+      cancelAnimationFrame(animationId);
+      isAnimating = false;
+    }
+  });
+
+  return glow;
 }
