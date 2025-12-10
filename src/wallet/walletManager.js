@@ -3,7 +3,7 @@
 // For production, consider using React with RainbowKit and Solana wallet adapter
 
 import { formatAddress } from '../utils/formatters.js';
-import { CHAINS } from '../utils/constants.js';
+import { CHAINS, USDC_ADDRESSES } from '../utils/constants.js';
 import { getWalletPreference, setWalletPreference } from '../services/storageService.js';
 
 class WalletManager {
@@ -164,7 +164,7 @@ class WalletManager {
         });
     }
 
-    // Get balance (simplified)
+    // Get balance (simplified - Native)
     async getBalance() {
         if (!this.address) return '0';
 
@@ -184,6 +184,74 @@ class WalletManager {
             console.error('Error getting balance:', error);
             return '0';
         }
+    }
+
+    // Get USDC Balance
+    async getUSDCBalance() {
+        if (!this.address) return '0.00';
+
+        try {
+            if (this.currentChain === CHAINS.EVM && window.ethereum) {
+                // Get Chain ID
+                const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
+                const chainId = parseInt(chainIdHex, 16);
+                const usdcAddress = USDC_ADDRESSES[chainId];
+
+                if (!usdcAddress) {
+                    console.warn(`USDC address not found for chain ID: ${chainId}`);
+                    // Fallback or return 0
+                    return '0.00';
+                }
+
+                // ERC20 balanceOf(address) selector: 0x70a08231
+                // Pad address to 32 bytes (64 chars)
+                const paddedAddress = this.address.substring(2).padStart(64, '0');
+                const data = '0x70a08231' + paddedAddress;
+
+                const balanceHex = await window.ethereum.request({
+                    method: 'eth_call',
+                    params: [{
+                        to: usdcAddress,
+                        data: data
+                    }, 'latest']
+                });
+
+                if (balanceHex === '0x') return '0.00';
+
+                // USDC usually has 6 decimals
+                const balanceBigInt = BigInt(balanceHex);
+                const balance = Number(balanceBigInt) / 1e6;
+                return balance.toFixed(2);
+
+            } else if (this.currentChain === CHAINS.SOLANA) {
+                // Fetch from Solana RPC
+                const response = await fetch('https://api.mainnet-beta.solana.com', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        id: 1,
+                        method: 'getTokenAccountsByOwner',
+                        params: [
+                            this.address,
+                            { mint: USDC_ADDRESSES.SOLANA },
+                            { encoding: 'jsonParsed' }
+                        ]
+                    })
+                });
+
+                const json = await response.json();
+                if (json.result && json.result.value && json.result.value.length > 0) {
+                    const info = json.result.value[0].account.data.parsed.info;
+                    return info.tokenAmount.uiAmountString || '0.00';
+                }
+                return '0.00';
+            }
+        } catch (error) {
+            console.error('Error fetching USDC balance:', error);
+            return '0.00';
+        }
+        return '0.00';
     }
 
     // Sign message

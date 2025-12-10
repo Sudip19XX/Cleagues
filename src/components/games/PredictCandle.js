@@ -215,6 +215,205 @@ async function createCandleCard(token, interval, timeframeMinutes) {
     redOdds = Math.max(10, Math.min(90, redOdds));
   }
 
+  // --- Persistence Helpers ---
+
+  function saveActiveBets() {
+    const bets = [];
+    activePredictions.forEach((data, key) => {
+      // Only save essential data (no DOM refs, no functions)
+      const { prediction, wagerAmount, targetCandleOpenTime, entryPriceRef, symbol, timeframe, key: storedKey, customStatus } = data;
+      // Don't save if it's already lost and cleaning up (but customStatus might indicate won/claimable)
+      bets.push({ key: storedKey || key, prediction, wagerAmount, targetCandleOpenTime, entryPriceRef, symbol, timeframe, customStatus });
+    });
+    localStorage.setItem('predict_candle_bets', JSON.stringify(bets));
+  }
+
+  function restoreActiveBets() {
+    const saved = localStorage.getItem('predict_candle_bets');
+    if (!saved) return;
+
+    try {
+      const bets = JSON.parse(saved);
+      bets.forEach(bet => {
+        const { key, symbol, timeframe, targetCandleOpenTime } = bet;
+        const intervalMs = timeframe * 60 * 1000;
+        const candleEndTime = targetCandleOpenTime + intervalMs;
+        const now = Date.now();
+
+        if (now >= candleEndTime) {
+          // Ended while away/refreshing
+          checkPastBet(bet);
+        } else {
+          // Still active
+          resurrectActiveBet(bet);
+        }
+      });
+    } catch (e) {
+      console.error('Failed to restore bets:', e);
+    }
+  }
+
+  async function checkPastBet(bet) {
+    const { symbol, timeframe, targetCandleOpenTime, key } = bet;
+    const interval = TIMEFRAME_MAP[timeframe] || '5m';
+
+    // We need to fetch history and find the candle
+    try {
+      // Fetch last 50 to be safe
+      const history = await fetchHistoricalCandles(symbol, interval, 50);
+      const candle = history.find(c => c.openTime === targetCandleOpenTime);
+
+      // Reconstruct basic predictionData for resolveBet
+      const predictionData = {
+        ...bet,
+        button: null, // No button ref on resurrection
+        unsub: null,
+        timerInterval: null
+      };
+      activePredictions.set(key, predictionData); // Set temporarily for resolve
+
+      if (candle && candle.isClosed) {
+        resolveBet(key, symbol, candle, predictionData);
+      } else {
+        // If not found or not close, maybe API delay? Or very old?
+        // If very old, expire.
+        const age = Date.now() - (targetCandleOpenTime + timeframe * 60000);
+        if (age > 3600000) { // 1 hour old
+          activePredictions.delete(key);
+          saveActiveBets();
+        } else {
+          // Try subscribing just in case it's just finishing
+          resurrectActiveBet(bet);
+        }
+      }
+    } catch (e) {
+      console.error('Error checking past bet:', e);
+    }
+  }
+
+  function resurrectActiveBet(bet) {
+    const { symbol, timeframe, targetCandleOpenTime, key } = bet;
+    const interval = TIMEFRAME_MAP[timeframe];
+    const timeframeMs = timeframe * 60 * 1000;
+
+    // Reconstruct predictionObj
+    const predictionData = {
+      ...bet,
+      button: null, // UI will bind when card is created
+      timerInterval: null
+    };
+
+    // Define updateTimer (Copy of logic in submitPrediction - ideally helper)
+    // For brevity, we'll re-implement the timer logic minimal version or refactor
+    // BUT updateTimer depends on predictionData closure.
+    // To Avoid DRY violation and complexity, maybe better to abstract `startBetTracking(data)`?
+    // Given constraints, I will duplicate validity check logic primarily.
+
+    const updateTimer = () => {
+      // Logic from submitPrediction (simplified for tracker)
+      const now = Date.now();
+      const candleStartTime = targetCandleOpenTime;
+      const candleEndTime = candleStartTime + timeframeMs;
+      const currentPath = window.location.hash.replace('#', '') || '/';
+      const isOnPredictPage = currentPath === '/predict-candle';
+
+      if (now >= candleEndTime) {
+        clearInterval(predictionData.timerInterval);
+        return; // Subscription will handle close
+      }
+
+      const isPending = now < candleStartTime;
+      const targetTime = isPending ? candleStartTime : candleEndTime;
+      const remaining = Math.max(0, targetTime - now);
+
+      if (isOnPredictPage) {
+        // Try to find button if we don't have a valid ref
+        if (!predictionData.button || !document.body.contains(predictionData.button)) {
+          const card = document.getElementById(`candle-card-${symbol}`);
+          if (card) {
+            const btn = card.querySelector('.submit-prediction-btn');
+            if (btn) {
+              predictionData.button = btn;
+              // Force disable state since we found it late
+              btn.disabled = true;
+              // We could also disable inputs here if selectable
+            }
+          }
+        }
+
+        const btn = predictionData.button;
+        if (btn && document.body.contains(btn)) {
+          // ... UI Update logic duplicates submitPrediction ...
+          // We let UI update itself via createCandleCard restore logic?
+          // Actually createCandleCard restore logic sets static text.
+          // We need THIS timer to update the button text!
+          // So we need to query button again or use reference.
+          // predictionData.button is updated by createCandleCard.
+
+          const hours = Math.floor(remaining / 3600000);
+          const minutes = Math.floor((remaining % 3600000) / 60000);
+          const seconds = Math.floor((remaining % 60000) / 1000);
+          const timeString = minutes + ':' + seconds.toString().padStart(2, '0');
+
+          const stored = candleDataStore.get(symbol);
+          const currentPrice = (stored && stored.length > 0) ? formatCurrency(stored[stored.length - 1].close) : '';
+
+          if (isPending) {
+            btn.innerHTML = `<span style="opacity:0.8;">Starts in</span> ${timeString}`;
+            btn.style.background = '#3B82F6';
+          } else {
+            btn.innerHTML = `
+                      <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <span>Live: ${timeString}</span>
+                        <span style="opacity: 0.6;">|</span>
+                        <span>${currentPrice}</span>
+                      </div>
+                    `;
+            btn.style.background = bet.prediction === 'green' ? '#09C285' : '#FF4D4F';
+          }
+        }
+
+        // Ensure no tracker on page
+        const item = document.getElementById(`tracker-item-${symbol}`);
+        if (item) item.remove();
+      } else {
+        // Off page tracker
+        const container = getTrackerContainer();
+        const label = isPending ? 'Starting in...' : 'Your candle prediction is Live';
+        updateTrackerItem(container, symbol, bet.prediction, remaining, label, 'compact', predictionData);
+      }
+    };
+
+    predictionData.timerInterval = setInterval(updateTimer, 1000);
+    // Bind subscription
+    const unsub = subscribeToCandleUpdates(symbol, interval, (candle) => {
+      // Also update store for price display
+      const current = candleDataStore.get(symbol) || [];
+      if (candle.isClosed || !current.length || candle.close !== current[current.length - 1].close) {
+        candleDataStore.set(symbol, [...current, candle]);
+      }
+
+      if (candle.isClosed) {
+        resolveBet(key, symbol, candle, predictionData);
+      }
+    });
+    predictionData.unsub = unsub;
+
+    // Add hash listener
+    window.addEventListener('hashchange', updateTimer);
+
+    activePredictions.set(key, predictionData);
+    updateTimer();
+  }
+
+  // Initialize persistence immediately (Sync)
+  restoreActiveBets();
+
+  // Helper to remove item
+  function removeTracker(symbol) {
+    const item = document.getElementById(`tracker-item-${symbol}`);
+    if (item) item.remove();
+  }
   card.innerHTML = `
     <!-- Token Header -->
     <div style="display: flex; align-items: center; gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">
@@ -335,52 +534,49 @@ async function createCandleCard(token, interval, timeframeMinutes) {
         </div>
         <div style="display: flex; gap: 6px;">
           <button class="quick-amount-btn" data-amount="5" style="
-            width: 32px;
-            height: 32px;
-            padding: 0;
+            padding: 8px 12px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 50%;
+            border-radius: 8px;
             color: var(--color-text-primary);
             font-weight: 600;
-            font-size: 0.65rem;
+            font-size: 0.75rem;
             cursor: pointer;
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
+            white-space: nowrap;
           ">+5</button>
           <button class="quick-amount-btn" data-amount="10" style="
-            width: 32px;
-            height: 32px;
-            padding: 0;
+            padding: 8px 12px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 50%;
+            border-radius: 8px;
             color: var(--color-text-primary);
             font-weight: 600;
-            font-size: 0.6rem;
+            font-size: 0.75rem;
             cursor: pointer;
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
+            white-space: nowrap;
           ">+10</button>
           <button class="quick-amount-btn" data-amount="max" style="
-            width: 32px;
-            height: 32px;
-            padding: 0;
+            padding: 8px 12px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 50%;
+            border-radius: 8px;
             color: var(--color-text-primary);
             font-weight: 600;
-            font-size: 0.55rem;
+            font-size: 0.75rem;
             cursor: pointer;
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
+            white-space: nowrap;
           ">Max</button>
         </div>
       </div>
@@ -530,6 +726,48 @@ async function createCandleCard(token, interval, timeframeMinutes) {
       submitPrediction(token.symbol, selectedPrediction, token.name, timeframeMinutes, wagerAmount, submitBtn);
     }
   });
+
+  // RESTORE ACTIVE BET STATE (If returning to page)
+  const predictionKey = `${token.symbol}-${timeframeMinutes}`;
+  if (activePredictions.has(predictionKey)) {
+    const existingBet = activePredictions.get(predictionKey);
+    // Bind new button to existing bet
+    existingBet.button = submitBtn;
+
+    // Disable inputs
+    submitBtn.disabled = true;
+    greenBtn.style.opacity = '0.5';
+    redBtn.style.opacity = '0.5';
+    greenBtn.style.pointerEvents = 'none';
+    redBtn.style.pointerEvents = 'none';
+    wagerInput.disabled = true;
+
+    // Determine state
+    // If timer is running -> Active
+    if (existingBet.timerInterval) {
+      // Button style will be updated by next tick of updateTimer
+      // But set immediate placeholder
+      submitBtn.innerHTML = 'Restoring...';
+    }
+    // If timer cleared but in map -> Likely Won (waiting for claim)
+    else {
+      // Re-run resolve check logic or force Claim state?
+      // Since resolveBet clears timer and sets button styles, we need to re-apply "Claim" style if winner
+      // We can infer Winner from stored data? Or just check if we can "re-resolve"?
+      // resolveBet requires candle. We don't have it handy here easily.
+      // But we can store "status" in predictionData.
+      if (existingBet.customStatus === 'won') {
+        submitBtn.innerHTML = '🎉 Claim Reward';
+        submitBtn.style.background = 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)';
+        submitBtn.style.color = '#000';
+        submitBtn.disabled = false;
+        submitBtn.onclick = () => claimReward(token.symbol, existingBet, submitBtn, predictionKey);
+      } else if (existingBet.customStatus === 'lost') {
+        submitBtn.innerHTML = '❌ Lost';
+        submitBtn.style.background = '#666';
+      }
+    }
+  }
 
   return card;
 }
@@ -682,12 +920,72 @@ function updateCardWithCandle(card, candle, symbol) {
     }
   }
 
-  // Log when candle closes and check predictions
+  // Log when candle closes
   if (candle.isClosed) {
     console.log(`Candle closed for ${symbol}:`, candle.isGreen ? 'GREEN' : 'RED');
+  }
+}
 
-    // Check if there's an active prediction for this token
-    checkPredictionResult(symbol, candle);
+// Helper to check bet result (called by dedicated subscription)
+function resolveBet(key, symbol, closedCandle, predictionData) {
+  const { prediction, targetCandleOpenTime, unsub } = predictionData;
+
+  // Use dynamic button ref
+  const button = predictionData.button;
+
+  // Check if this is the candle we bet on
+  if (closedCandle.openTime !== targetCandleOpenTime) return;
+
+  // Cleanup subscription
+  if (unsub) unsub();
+
+  // Clear timer
+  if (predictionData.timerInterval) {
+    clearInterval(predictionData.timerInterval);
+    predictionData.timerInterval = null; // Mark as stopped
+    const tracker = document.getElementById(`candle-tracker-${symbol}`);
+    if (tracker) tracker.remove();
+  }
+
+  const isGreen = closedCandle.close > closedCandle.open;
+  const userPredictedGreen = prediction === 'green';
+  const isWinner = isGreen === userPredictedGreen;
+
+  // Store status for reconnection
+  predictionData.customStatus = isWinner ? 'won' : 'lost';
+
+  // Check if button is still in DOM (user might have navigated)
+  const isButtonActive = button && document.body.contains(button);
+
+  if (isWinner) {
+    if (isButtonActive) {
+      button.innerHTML = '🎉 Claim Reward';
+      button.style.background = 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)';
+      button.style.color = '#000';
+      button.disabled = false;
+      button.onclick = () => claimReward(symbol, predictionData, button, key);
+      triggerConfetti(button);
+    } else {
+      // Fallback notification?
+      console.log("User won but button missing - waiting for reconnect");
+    }
+  } else {
+    if (isButtonActive) {
+      button.innerHTML = '❌ Lost';
+      button.style.background = '#666';
+      button.style.opacity = '0.7';
+      setTimeout(() => {
+        // Only reset if still showing lost (user didn't leave)
+        if (document.body.contains(button)) {
+          resetPredictionButton(button);
+          activePredictions.delete(key);
+          saveActiveBets();
+        }
+      }, 3000);
+    } else {
+      activePredictions.delete(key);
+      saveActiveBets(); // Save removal
+    }
   }
 }
 
@@ -698,11 +996,17 @@ async function submitPrediction(tokenSymbol, prediction, tokenName, timeframe, w
     return;
   }
 
-  // Check if there's already an active prediction for this token
-  if (activePredictions.has(tokenSymbol)) {
-    alert('You already have an active prediction for this token. Wait for it to settle.');
-    return;
+  // Check if there's any active prediction for this token (regardless of timeframe)
+  // "once the bet starts the user should not be able to place bets on the same coin"
+  for (const key of activePredictions.keys()) {
+    if (key.startsWith(`${tokenSymbol}-`)) {
+      alert(`You already have an active prediction for ${tokenSymbol}. Please wait for it to settle.`);
+      return;
+    }
   }
+
+  // Construct key for this specific prediction
+  const predictionKey = `${tokenSymbol}-${timeframe}`;
 
   // Validate wager amount
   if (!wagerAmount || wagerAmount <= 0) {
@@ -727,9 +1031,17 @@ async function submitPrediction(tokenSymbol, prediction, tokenName, timeframe, w
     });
 
     // Calculate when the next candle will close
-    const now = Date.now();
     const timeframeMs = timeframe * 60 * 1000;
-    const currentCandleStart = Math.floor(now / timeframeMs) * timeframeMs;
+    let currentCandleStart;
+
+    // Use actual latest candle time from store to avoid local clock drift
+    const storedCandles = candleDataStore.get(tokenSymbol);
+    if (storedCandles && storedCandles.length > 0) {
+      currentCandleStart = storedCandles[storedCandles.length - 1].openTime;
+    } else {
+      const now = Date.now();
+      currentCandleStart = Math.floor(now / timeframeMs) * timeframeMs;
+    }
     const nextCandleEnd = currentCandleStart + (timeframeMs * 2); // Next candle's close time
 
     // Store the prediction
@@ -740,43 +1052,93 @@ async function submitPrediction(tokenSymbol, prediction, tokenName, timeframe, w
       button,
       timerInterval: null,
       predictionId: result.predictionId,
+      // Capture rough entry price reference (last known close) for display
+      entryPriceRef: storedCandles && storedCandles.length > 0 ? storedCandles[storedCandles.length - 1].close : 0,
+      symbol: tokenSymbol,    // Store for persistence
+      timeframe: timeframe,   // Store for persistence
+      key: predictionKey      // Store for persistence
     };
 
     // Start countdown timer
     // Start countdown timer with tracker management
     const updateTimer = () => {
-      const remaining = nextCandleEnd - Date.now();
+      // Always get FRESH button ref from data object (in case replaced by restore)
+      const currentBtn = predictionData.button;
+
+      const now = Date.now();
+      const candleStartTime = predictionData.targetCandleOpenTime;
+      const candleEndTime = candleStartTime + timeframeMs;
 
       // Check current page
       const currentPath = window.location.hash.replace('#', '') || '/';
       const isOnPredictPage = currentPath === '/predict-candle';
 
-      if (remaining <= 0) {
+      if (now >= candleEndTime) {
         clearInterval(predictionData.timerInterval);
-        button.innerHTML = '⏳ Checking...';
+        if (currentBtn && document.body.contains(currentBtn)) currentBtn.innerHTML = '⏳ Checking...';
         // Remove tracker if exists
         const tracker = document.getElementById(`candle-tracker-${tokenSymbol}`);
         if (tracker) tracker.remove();
+
+        // Final logic is handled by subscription/checkPastBet, but if subs fail, timer ending is just visual
         return;
       }
 
-      const minutes = Math.floor(remaining / 60000);
+      // Determine phase
+      const isPending = now < candleStartTime;
+      const targetTime = isPending ? candleStartTime : candleEndTime;
+      const remaining = Math.max(0, targetTime - now);
+
+      const hours = Math.floor(remaining / 3600000);
+      const minutes = Math.floor((remaining % 3600000) / 60000);
       const seconds = Math.floor((remaining % 60000) / 1000);
-      const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
-      // Update inline button if on page
-      if (isOnPredictPage) {
-        button.innerHTML = `⏱️ ${timeString}`;
-        button.style.background = prediction === 'green' ? '#09C285' : '#FF4D4F';
-
-        // Hide floating tracker if present
-        const tracker = document.getElementById(`candle-tracker-${tokenSymbol}`);
-        if (tracker) tracker.style.display = 'none';
+      let timeString = '';
+      if (hours > 0) {
+        timeString = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
       } else {
-        // Show floating tracker if NOT on page
-        const tracker = createFloatingTracker(tokenSymbol, prediction, nextCandleEnd);
-        tracker.style.display = 'flex';
-        updateTrackerContent(tracker, tokenSymbol, prediction, remaining);
+        timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      }
+
+      // Update inline button
+      if (isOnPredictPage && currentBtn && document.body.contains(currentBtn)) {
+        // Fetch current price for detailed button
+        const stored = candleDataStore.get(tokenSymbol);
+        const currentPrice = (stored && stored.length > 0) ? formatCurrency(stored[stored.length - 1].close) : '';
+
+        if (isPending) {
+          currentBtn.innerHTML = `<span style="opacity:0.8;">Starts in</span> ${timeString}`;
+          currentBtn.style.background = '#3B82F6';
+        } else {
+          // Detailed Live Status
+          currentBtn.innerHTML = `
+              <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <span>Live: ${timeString}</span>
+                <span style="opacity: 0.6;">|</span>
+                <span>${currentPrice}</span>
+              </div>
+            `;
+          currentBtn.style.background = prediction === 'green' ? '#09C285' : '#FF4D4F';
+        }
+      }
+
+      // Render shared tracker (Detailed OFF on page, Compact off page)
+      // User requested "I don't want this" regarding the detailed window on main page.
+      // So on Main Page: Show NOTHING extra (just inline button).
+      // On Off Page: Show Compact Widget.
+
+      if (!isOnPredictPage) {
+        const container = getTrackerContainer();
+        const trackerMode = 'compact';
+
+        // Off-page customized text
+        const label = isPending ? 'Starting in...' : 'Your candle prediction is Live';
+
+        updateTrackerItem(container, tokenSymbol, prediction, remaining, label, trackerMode, predictionData);
+      } else {
+        // If on page, ensure no tracker item exists for this token
+        const item = document.getElementById(`tracker-item-${tokenSymbol}`);
+        if (item) item.remove();
       }
     };
 
@@ -786,7 +1148,17 @@ async function submitPrediction(tokenSymbol, prediction, tokenName, timeframe, w
     // Add navigation listener to update visibility immediately
     window.addEventListener('hashchange', updateTimer);
 
-    activePredictions.set(tokenSymbol, predictionData);
+    // Subscribe to updates for this specific timeframe to track result
+    const interval = TIMEFRAME_MAP[timeframe];
+    const unsub = subscribeToCandleUpdates(tokenSymbol, interval, (candle) => {
+      if (candle.isClosed) {
+        resolveBet(predictionKey, tokenSymbol, candle, predictionData);
+      }
+    });
+    predictionData.unsub = unsub;
+
+    activePredictions.set(predictionKey, predictionData);
+    saveActiveBets(); // Save to LS
 
   } catch (error) {
     button.disabled = false;
@@ -856,99 +1228,150 @@ function addCandleTrackerStyles() {
   document.head.appendChild(style);
 }
 
-function createFloatingTracker(symbol, prediction, targetTime) {
-  const trackerId = `candle-tracker-${symbol}`;
-  let tracker = document.getElementById(trackerId);
-
-  if (!tracker) {
-    // Inject styles
-    addCandleTrackerStyles();
-
-    tracker = document.createElement('div');
-    tracker.id = trackerId;
-    tracker.className = 'candle-tracker-card pulse';
-
-    // Click to navigate back
-    tracker.addEventListener('click', () => {
-      window.location.hash = '#/predict-candle';
-    });
-
-    document.body.appendChild(tracker);
+// Shared Tracker Container
+function getTrackerContainer() {
+  let container = document.getElementById('active-bets-tracker-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'active-bets-tracker-container';
+    container.style.cssText = `
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            pointer-events: none; /* Let clicks pass through gaps */
+        `;
+    document.body.appendChild(container);
   }
-
-  return tracker;
+  return container;
 }
 
-function updateTrackerContent(tracker, symbol, prediction, remainingMs) {
-  const minutes = Math.floor(remainingMs / 60000);
+function updateTrackerItem(container, symbol, prediction, remainingMs, statusLabel, mode, predictionData) {
+  const itemId = `tracker-item-${symbol}`;
+  let item = document.getElementById(itemId);
+
+  // Create if missing
+  if (!item) {
+    item = document.createElement('div');
+    item.id = itemId;
+    item.style.cssText = `
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            color: white;
+            font-family: var(--font-primary);
+            overflow: hidden;
+            pointer-events: auto;
+            transition: all 0.3s ease;
+            animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            min-width: 260px;
+        `;
+    // Navigate on click
+    item.addEventListener('click', () => {
+      if (window.location.hash !== '#/predict-candle') {
+        window.location.hash = '#/predict-candle';
+      }
+    });
+
+    // Inject keyframes if generic (assuming common CSS or add here)
+    // ...
+
+    container.appendChild(item);
+  }
+
+  const hours = Math.floor(remainingMs / 3600000);
+  const minutes = Math.floor((remainingMs % 3600000) / 60000);
   const seconds = Math.floor((remainingMs % 60000) / 1000);
-  const timeDisplay = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+  let timeDisplay = '';
+  if (hours > 0) {
+    timeDisplay = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  } else {
+    timeDisplay = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }
+
   const color = prediction === 'green' ? '#09C285' : '#FF4D4F';
   const arrow = prediction === 'green' ? '↑' : '↓';
 
-  tracker.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 2px;">
-            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.7); font-weight: 500;">Predict Candle</div>
-            <div style="display: flex; align-items: center; gap: 6px;">
-                <span style="font-weight: 700; font-size: 0.95rem;">${symbol}</span>
-                <span style="color: ${color}; font-weight: 700; font-size: 0.9rem;">${arrow} ${prediction.toUpperCase()}</span>
+  // Get latest price for detailed view
+  let currentPrice = '...';
+  let pnlClass = '';
+  if (mode === 'detailed') {
+    const stored = candleDataStore.get(symbol);
+    if (stored && stored.length > 0) {
+      const price = stored[stored.length - 1].close;
+      currentPrice = formatCurrency(price);
+      // Rough PnL color
+      // If Green prediction, Price > Entry? Wait, entry entryPriceRef is OLD close.
+      // Real entry is Open of target candle. If we are Live, we might retrieve it?
+      // But let's just use current candle color from store?
+      // If stored[last].isGreen && prediction=='green' -> Winning?
+      const isWinning = (prediction === 'green' && stored[stored.length - 1].isGreen) ||
+        (prediction === 'red' && !stored[stored.length - 1].isGreen);
+      pnlClass = isWinning ? 'text-green-400' : 'text-red-400';
+    }
+  }
+
+  if (mode === 'detailed') {
+    item.innerHTML = `
+            <div style="padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                    ${symbol} <span style="font-size: 0.8rem; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">${statusLabel}</span>
+                </div>
+                <div style="font-family: monospace; font-weight: 700;">${timeDisplay}</div>
             </div>
-        </div>
-        <div style="font-family: monospace; font-size: 1.25rem; font-weight: 700; color: white;">
-            ${timeDisplay}
-        </div>
-    `;
+            <div style="padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span style="color: rgba(255,255,255,0.6); font-size: 0.75rem;">Prediction</span>
+                    <span style="color: ${color}; font-weight: 700;">${arrow} ${prediction.toUpperCase()}</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px; text-align: right;">
+                    <span style="color: rgba(255,255,255,0.6); font-size: 0.75rem;">Current Price</span>
+                    <span style="font-weight: 700;">${currentPrice}</span>
+                </div>
+            </div>
+        `;
+    item.style.padding = '0'; // Reset padding for detailed card layout
+    item.style.minWidth = '260px';
+  } else {
+    // Compact Mode (Notification Style - Matching Pending Dream Team Widget)
+    item.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: center; color: ${color}; margin-right: 12px;">
+               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                 <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+                 <polyline points="16 7 22 7 22 13"></polyline>
+               </svg>
+            </div>
+            <span style="font-family: var(--font-primary); font-weight: 600; font-size: 0.95rem; color: #fff; margin-right: 12px; white-space: nowrap;">${statusLabel}</span>
+            <span style="
+                display: flex; align-items: center; justify-content: center;
+                min-width: 54px; height: 26px; padding: 0 8px;
+                background: ${prediction === 'green' ? '#09C285' : '#FF4D4F'};
+                color: white; border-radius: 6px;
+                font-size: 0.85rem; font-weight: 700;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                font-family: monospace;
+            ">${timeDisplay}</span>
+        `;
+    // Override styling to match widget
+    item.style.padding = '12px 20px';
+    item.style.minWidth = 'auto';
+    item.style.display = 'flex';
+    item.style.alignItems = 'center';
+    item.style.flexDirection = 'row';
+  }
 }
 
 // Check prediction result when candle closes
-function checkPredictionResult(symbol, closedCandle) {
-  const predictionData = activePredictions.get(symbol);
-  if (!predictionData) return;
-
-  // Check if this is the candle we bet on
-  if (closedCandle.openTime !== predictionData.targetCandleOpenTime) return;
-
-  // Clear the timer
-  if (predictionData.timerInterval) {
-    clearInterval(predictionData.timerInterval);
-    // Also remove tracker
-    const tracker = document.getElementById(`candle-tracker-${symbol}`);
-    if (tracker) tracker.remove();
-  }
-
-  const button = predictionData.button;
-  const isGreen = closedCandle.close > closedCandle.open;
-  const userPredictedGreen = predictionData.prediction === 'green';
-  const isWinner = isGreen === userPredictedGreen;
-
-  if (isWinner) {
-    // User won! 🎉
-    button.innerHTML = '🎉 Claim Reward';
-    button.style.background = 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)';
-    button.style.color = '#000';
-    button.disabled = false;
-
-    // Trigger confetti celebration!
-    triggerConfetti(button);
-
-    // Add claim handler
-    button.onclick = () => claimReward(symbol, predictionData, button);
-  } else {
-    // User lost
-    button.innerHTML = '❌ Lost';
-    button.style.background = '#666';
-    button.style.opacity = '0.7';
-
-    // Reset after 3 seconds
-    setTimeout(() => {
-      resetPredictionButton(button);
-      activePredictions.delete(symbol);
-    }, 3000);
-  }
-}
+// function checkPredictionResult(symbol, closedCandle) { ... } removed in favor of resolveBet
 
 // Claim reward function
-function claimReward(symbol, predictionData, button) {
+function claimReward(symbol, predictionData, button, key) {
   button.disabled = true;
   button.innerHTML = '<div class="loading"></div>';
 
@@ -957,7 +1380,7 @@ function claimReward(symbol, predictionData, button) {
     const reward = (predictionData.wagerAmount * 1.9).toFixed(2); // 1.9x payout
     alert(`🎉 Congratulations! You won $${reward} USDC!`);
     resetPredictionButton(button);
-    activePredictions.delete(symbol);
+    if (key) activePredictions.delete(key);
   }, 1500);
 }
 

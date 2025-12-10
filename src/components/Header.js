@@ -9,6 +9,7 @@ export function createHeader() {
 
   const container = document.createElement('div');
   container.className = 'header-container';
+  container.style.position = 'relative'; // Support absolute centering of children
 
   // Logo
   const logo = document.createElement('a');
@@ -27,10 +28,110 @@ export function createHeader() {
     navigate('/');
   });
 
-  // Navigation (removed - now in sidebar)
+  // Navigation
+  // To strictly center it regardless of Logo/Wallet widths, use absolute positioning
   const nav = document.createElement('nav');
   nav.className = 'nav';
-  nav.style.display = 'none'; // Hide nav since items moved to sidebar
+  nav.style.display = 'none';
+  nav.style.gap = '24px';
+  nav.style.alignItems = 'center';
+
+  // Absolute centering
+  nav.style.position = 'absolute';
+  nav.style.left = '50%';
+  nav.style.transform = 'translateX(-50%)';
+  nav.style.margin = '0';
+
+  // "leaderboard picks and rewards"
+  const navLinks = [
+    { label: 'Leaderboard', path: '/leaderboard' },
+    { label: 'Picks', path: '/picks' },
+    { label: 'Rewards', path: '/rewards' }
+  ];
+
+  navLinks.forEach((item, index) => {
+    const link = document.createElement('a');
+    link.href = `#${item.path}`;
+    link.textContent = item.label;
+    link.className = 'nav-link';
+    link.style.cssText = `
+        color: var(--color-text-secondary);
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        text-transform: capitalize;
+        display: inline-block; /* Required for transform */
+    `;
+    link.addEventListener('mouseenter', () => {
+      link.style.color = '#fff';
+      link.style.transform = 'scale(1.05)'; // Increase size slightly
+    });
+    link.addEventListener('mouseleave', () => {
+      link.style.color = 'var(--color-text-secondary)';
+      link.style.transform = 'scale(1)';
+
+      // Re-apply active color if needed logic is handled by checkActive?
+      // checkActive sets initial color. Mouseleave resets to default.
+      // We should re-run checkActive logic on mouseleave to ensure Active state persists?
+      const hash = window.location.hash.replace('#', '') || '/';
+      if (hash === item.path) {
+        link.style.color = '#fff';
+      }
+    });
+
+    // Add active state styling
+    const checkActive = () => {
+      const hash = window.location.hash.replace('#', '') || '/';
+      if (hash === item.path) {
+        link.style.color = '#fff';
+        link.style.fontWeight = '600';
+      } else {
+        // Only reset if NOT hovering?
+        // Simple: Reset color/weight.
+        link.style.color = 'var(--color-text-secondary)';
+        link.style.fontWeight = '500';
+      }
+    };
+    window.addEventListener('hashchange', checkActive);
+    setTimeout(checkActive, 0);
+
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      navigate(item.path);
+    });
+    nav.appendChild(link);
+
+    // Add vertical divider after text (except last)
+    if (index < navLinks.length - 1) {
+      const divider = document.createElement('div');
+      divider.style.cssText = `
+            width: 1px;
+            height: 16px;
+            background: rgba(255, 255, 255, 0.15);
+        `;
+      nav.appendChild(divider);
+    }
+  });
+
+  // Logic to show/hide nav based on page (and wallet? user request didn't mention wallet this time but implies "logged in" context usually)
+  // "header in other pages should have"
+  const updateNavVisibility = () => {
+    const hash = window.location.hash.replace('#', '') || '/';
+    const isHome = hash === '/' || hash === '' || hash === '/home';
+
+    // Show on other pages
+    if (!isHome) {
+      nav.style.display = 'flex';
+    } else {
+      nav.style.display = 'none';
+    }
+  };
+
+  window.addEventListener('hashchange', updateNavVisibility);
+
+  // Initial check
+  setTimeout(updateNavVisibility, 0);
 
   // Wallet button container
   const walletContainer = document.createElement('div');
@@ -41,48 +142,27 @@ export function createHeader() {
   // Create wallet button
   createWalletButton(walletContainer);
 
-  // Dark mode toggle switch
-  const themeSwitch = document.createElement('label');
-  themeSwitch.className = 'theme-switch';
-  // Note: We use the slider-icon classes if we want static icons on the track, but the CSS uses pseudo-elements for now.
-  themeSwitch.innerHTML = `
-    <input type="checkbox" id="dark-mode-checkbox">
-    <span class="theme-slider"></span>
-  `;
+  // Theme switch removed per request
 
-  const checkbox = themeSwitch.querySelector('input');
-
-  // Check if dark mode should be enabled (default to dark mode)
+  // Initialize Theme (Default to Dark)
   const isDarkMode = localStorage.getItem('darkMode') !== 'false';
-
-  // Set initial state
   if (isDarkMode) {
     document.documentElement.classList.add('dark-mode');
     document.body.classList.add('dark-mode');
-    checkbox.checked = true;
   } else {
+    // If user explicitly set light mode previously, respect it (or force dark if desired?)
+    // "site should be dark mode by default" implies default.
+    // If we want to FORCE dark mode always since toggle is gone:
+    // document.documentElement.classList.add('dark-mode');
+    // document.body.classList.add('dark-mode');
+    // But let's stick to reading preference for now.
     document.documentElement.classList.remove('dark-mode');
     document.body.classList.remove('dark-mode');
-    checkbox.checked = false;
   }
-
-  // Handle toggle change
-  checkbox.addEventListener('change', (e) => {
-    if (e.target.checked) {
-      document.documentElement.classList.add('dark-mode');
-      document.body.classList.add('dark-mode');
-      localStorage.setItem('darkMode', 'true');
-    } else {
-      document.documentElement.classList.remove('dark-mode');
-      document.body.classList.remove('dark-mode');
-      localStorage.setItem('darkMode', 'false');
-    }
-  });
-
-  walletContainer.appendChild(themeSwitch);
 
   // Assemble header
   container.appendChild(logo);
+  container.appendChild(nav); // Add navigation links
   container.appendChild(walletContainer);
   header.appendChild(container);
 

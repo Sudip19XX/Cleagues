@@ -83,6 +83,7 @@ export const BINANCE_TOKENS = {
     'JUP': { pair: 'JUPUSDT', name: 'Jupiter', image: 'https://assets.coingecko.com/coins/images/34188/small/jup.png' },
     'BERA': { pair: 'BERAUSDT', name: 'Berachain', image: 'https://assets.coingecko.com/coins/images/36017/small/bera.png' },
     'MOVE': { pair: 'MOVEUSDT', name: 'Movement', image: 'https://assets.coingecko.com/coins/images/37160/small/move.jpg' },
+    'POL': { pair: 'POLUSDT', name: 'Polygon', image: 'https://assets.coingecko.com/coins/images/4713/small/polygon.png' },
 };
 
 // List of symbol keys for easy iteration
