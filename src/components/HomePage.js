@@ -1,11 +1,15 @@
 // Home Page Component
-
 import { navigate } from '../App.js';
 import { GAME_MODES } from '../utils/constants.js';
 
 export function createHomePage() {
+
   const page = document.createElement('div');
   page.className = 'home-page';
+
+  // Add futuristic grid background
+  const bg = createBackgroundLines();
+  page.appendChild(bg);
 
   // Hero Section
   const hero = createHeroSection();
@@ -36,15 +40,13 @@ function createHeroSection() {
     <h1 style="font-size: 4rem; margin-bottom: var(--spacing-lg); animation: fadeIn 0.8s ease-out; color: #000000;">
       CRYPTO LEAGUES
     </h1>
-    <p style="font-size: 1.5rem; color: var(--color-text-secondary); margin-bottom: var(--spacing-2xl); max-width: 700px; margin-left: auto; margin-right: auto; animation: fadeIn 0.8s ease-out 0.2s both;">
-      The future of crypto fantasy trading
+    <p style="font-size: 1.2rem; line-height: 1.6; color: var(--color-text-secondary); margin-bottom: var(--spacing-2xl); max-width: 800px; margin-left: auto; margin-right: auto; animation: fadeIn 0.8s ease-out 0.2s both;">
+      Experience the future of crypto fantasy trading. Compete in high-stakes leagues, predict market movements with precision, and build your dream portfolio.
+      Master the markets, climb the global leaderboards, and earn real rewards in a decentralized, skill-based ecosystem.
     </p>
     <div style="display: flex; gap: var(--spacing-md); justify-content: center; flex-wrap: wrap; animation: fadeIn 0.8s ease-out 0.4s both;">
       <button class="btn btn-primary btn-lg" id="get-started">
         Get Started
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M5 12h14M12 5l7 7-7 7"></path>
-        </svg>
       </button>
       <button class="btn btn-secondary btn-lg" id="learn-more">
         Learn More
@@ -60,8 +62,7 @@ function createHeroSection() {
     const learnMoreBtn = section.querySelector('#learn-more');
 
     getStartedBtn?.addEventListener('click', () => {
-      const gamesSection = document.getElementById('games');
-      gamesSection?.scrollIntoView({ behavior: 'smooth' });
+      navigate('/dream-team');
     });
 
     learnMoreBtn?.addEventListener('click', () => {
@@ -77,7 +78,7 @@ function createGamesSection() {
   section.id = 'games';
   section.style.cssText = `
     padding: var(--spacing-3xl) 0;
-    background: var(--color-bg-secondary);
+    background: transparent;
   `;
 
   const container = document.createElement('div');
@@ -93,23 +94,25 @@ function createGamesSection() {
   container.appendChild(title);
 
   const grid = document.createElement('div');
-  grid.className = 'grid';
+  grid.className = 'grid'; // Keeping class name for consistency, though it's flex now
   grid.style.cssText = `
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: var(--spacing-xl);
-    max-width: 1200px;
-    margin: 0 auto;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     justify-items: center;
+    gap: var(--spacing-md);
+    max-width: 1400px;
+    padding: 0 var(--spacing-md);
+    margin: 0 auto;
     animation: fadeIn 0.8s ease-out;
   `;
 
   // Reorder games: Dream Team, Crypto Duel, Time-Based, Predict Candle
   const orderedModes = [
     GAME_MODES.DREAM_TEAM,
-    GAME_MODES.CRYPTO_DUEL,
     GAME_MODES.TIME_BASED,
     GAME_MODES.PREDICT_CANDLE,
+    GAME_MODES.PVP_MODE,
+    GAME_MODES.CRYPTO_DUEL,
   ];
 
   orderedModes.forEach((mode, index) => {
@@ -133,25 +136,30 @@ function createGameCard(mode, index) {
   card.style.cssText = `
     cursor: pointer;
     width: 100%;
-    max-width: 320px;
+    max-width: 350px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--spacing-xl);
     animation: fadeIn 0.6s ease-out ${index * 0.1}s both;
   `;
 
   card.innerHTML = `
-    <div style="font-size: 3rem; margin-bottom: var(--spacing-md); text-align: center;">
-      ${mode.icon}
+    <div style="height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: var(--spacing-md);">
+      <div style="transform: scale(1.2);">
+        ${mode.icon}
+      </div>
     </div>
-    <h3 style="margin-bottom: var(--spacing-md); text-align: center;">
+    <h3 style="margin-bottom: var(--spacing-md); text-align: center; min-height: 1.2em; display: flex; align-items: center;">
       ${mode.name}
     </h3>
-    <p style="color: var(--color-text-secondary); text-align: center; margin-bottom: var(--spacing-lg);">
+    <p style="color: var(--color-text-secondary); text-align: center; margin-bottom: var(--spacing-lg); flex-grow: 1;">
       ${mode.description}
     </p>
-    <button class="btn btn-primary" style="width: 100%;">
-      Play Now
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M5 12h14M12 5l7 7-7 7"></path>
-      </svg>
+    <button class="btn btn-primary" style="width: max-content; margin: 0 auto; padding-left: var(--spacing-xl); padding-right: var(--spacing-xl);">
+      ${getButtonText(mode.name)}
     </button>
   `;
 
@@ -162,39 +170,63 @@ function createGameCard(mode, index) {
   return card;
 }
 
+function getButtonText(name) {
+  switch (name) {
+    case 'Dream Team': return 'Build Now';
+    case 'Crypto Duel': return 'Find Duel';
+    case 'Predict Candle': return 'Predict';
+    case 'PvP Battle': return 'Compete';
+    default: return 'Play Now';
+  }
+}
+
 function createComingSoonCard(index) {
   const card = document.createElement('div');
   card.className = 'card coming-soon-card';
   card.style.cssText = `
     width: 100%;
-    max-width: 320px;
-    animation: fadeIn 0.6s ease-out ${index * 0.1}s both;
+    max-width: 350px;
+    animation: fadeIn 0.6s ease-out ${Object.keys(GAME_MODES).length * 0.1}s both;
     opacity: 0.7;
     cursor: not-allowed;
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: var(--spacing-xl);
   `;
 
   card.innerHTML = `
-    <div style="position: absolute; top: 10px; right: 10px;">
-      <span class="badge badge-warning" style="font-size: 0.75rem;">Soon</span>
+    <div style="height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: var(--spacing-md);">
+      <style>
+        @keyframes gradient-spin { 
+          to { transform: rotate(360deg); } 
+        }
+        .gradient-ring {
+          position: relative;
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          background: transparent;
+        }
+        .gradient-ring::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: 50%;
+          background: conic-gradient(from 0deg, #09C285, #666666, #333333, #333333, #09C285);
+          -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 6px));
+          mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 6px));
+          animation: gradient-spin 1.2s linear infinite;
+        }
+      </style>
+      <div class="gradient-ring"></div>
     </div>
-    <div style="font-size: 3rem; margin-bottom: var(--spacing-md); text-align: center; filter: grayscale(0.3);">
-      🎯
-    </div>
-    <h3 style="margin-bottom: var(--spacing-md); text-align: center;">
-      More Game Modes
-    </h3>
     <p style="color: var(--color-text-secondary); text-align: center; margin-bottom: var(--spacing-lg);">
-      Exciting new game modes are coming soon! Stay tuned for updates.
+      Exciting and competitive modes are coming soon stay tuned for updates!
     </p>
-    <button class="btn btn-secondary" style="width: 100%; opacity: 0.5; cursor: not-allowed;" disabled>
-      Coming Soon
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"></circle>
-        <polyline points="12 6 12 12 16 14"></polyline>
-      </svg>
-    </button>
+
   `;
 
   return card;
@@ -257,4 +289,52 @@ function createStatsSection() {
   section.appendChild(container);
 
   return section;
+}
+
+function createBackgroundLines() {
+  const bg = document.createElement('div');
+  bg.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0.8;
+  `;
+
+  // Grid Lines
+  bg.innerHTML = `
+    <div style="
+      position: absolute;
+      width: 200%;
+      height: 200%;
+      top: -50%;
+      left: -50%;
+      background-image: 
+        linear-gradient(rgba(9, 194, 133, 0.4) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(9, 194, 133, 0.4) 1px, transparent 1px);
+      background-size: 40px 40px;
+      transform: perspective(500px) rotateX(60deg);
+      animation: gridMove 20s linear infinite;
+    "></div>
+    <div style="
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, transparent 0%, var(--color-bg-primary) 70%);
+    "></div>
+    <style>
+      @keyframes gridMove {
+        0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
+        100% { transform: perspective(500px) rotateX(60deg) translateY(40px); }
+      }
+    </style>
+  `;
+
+  return bg;
 }
