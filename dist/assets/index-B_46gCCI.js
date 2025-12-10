@@ -3151,4 +3151,4 @@ Transaction: ${d.txHash.slice(0,10)}...`),E=[],ge()}catch(d){c.disabled=!1,c.tex
     </p>
     <a href="#/" class="btn btn-primary">Go Home</a>
   `,e}function ae(e){window.location.hash=e,window.dispatchEvent(new PopStateEvent("popstate"))}async function Ue(){console.log("🚀 Initializing Crypto Leagues...");try{await C.autoConnect()}catch{console.log("No previous wallet connection found")}const e=Ir(),t=document.getElementById("app");t?t.appendChild(e):console.error("App container not found!"),console.log("✅ Crypto Leagues initialized")}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",Ue):Ue();
-//# sourceMappingURL=index-D4Y2O213.js.map
+//# sourceMappingURL=index-B_46gCCI.js.map

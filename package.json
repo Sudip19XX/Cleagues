@@ -7,9 +7,18 @@
         "dev": "vite",
         "build": "vite build",
         "preview": "vite preview",
-        "test": "vitest"
+        "test": "vitest",
+        "mobile": "vite build && npx cap sync",
+        "android": "vite build && npx cap sync && npx cap open android",
+        "android:run": "vite build && npx cap sync && npx cap run android",
+        "ios": "vite build && npx cap sync && npx cap open ios",
+        "ios:run": "vite build && npx cap sync && npx cap run ios"
     },
     "dependencies": {
+        "@capacitor/android": "^8.0.0",
+        "@capacitor/cli": "^8.0.0",
+        "@capacitor/core": "^8.0.0",
+        "@capacitor/ios": "^8.0.0",
         "@rainbow-me/rainbowkit": "^2.1.0",
         "@solana/wallet-adapter-base": "^0.9.23",
         "@solana/wallet-adapter-react": "^0.15.35",

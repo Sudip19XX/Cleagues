@@ -147,15 +147,102 @@
 /* Responsive */
 @media (max-width: 768px) {
     .sidebar {
-        transform: translateX(-100%);
+        transform: none;
+        top: auto;
+        bottom: 0;
+        width: 100%;
+        height: auto;
+        min-height: calc(60px + var(--safe-area-bottom));
+        border-right: none;
+        border-top: 1px solid var(--glass-border);
+        background: rgba(15, 23, 42, 0.95);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        padding-bottom: var(--safe-area-bottom);
+        z-index: 1000;
     }
 
-    .sidebar.open {
-        transform: translateX(0);
+    .sidebar-content {
+        padding: 0;
+        flex-direction: row;
+        width: 100%;
+        height: 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
     }
 
+    .sidebar-section {
+        margin: 0;
+        display: flex;
+        width: 100%;
+    }
+
+    .sidebar-category {
+        margin: 0;
+        width: 100%;
+    }
+
+    .sidebar-category-header,
+    .sidebar-footer,
+    .sidebar-live-indicator {
+        display: none !important;
+    }
+
+    .sidebar-links {
+        flex-direction: row;
+        justify-content: space-around;
+        width: 100%;
+        height: 100%;
+        padding: 0 10px;
+    }
+
+    .sidebar-link {
+        flex-direction: column;
+        justify-content: center;
+        gap: 4px;
+        font-size: 0.65rem;
+        padding: 8px 4px;
+        border-radius: 8px;
+        flex: 1;
+        text-align: center;
+        white-space: nowrap;
+        color: var(--color-text-muted);
+    }
+
+    .sidebar-link span {
+        display: block;
+        /* Ensure text is displayed */
+    }
+
+    .sidebar-link.active {
+        border-right: none;
+        background: transparent;
+        color: var(--color-primary);
+        box-shadow: none;
+        padding-right: 4px;
+    }
+
+    .sidebar-link.active svg {
+        stroke: var(--color-primary);
+        opacity: 1;
+    }
+
+    /* Adjust main content */
     .main-content {
-        margin-left: 0;
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding-bottom: calc(70px + var(--safe-area-bottom));
+        /* Active area + safe area */
+    }
+
+    /* Hide specific links if they are too many (Optional, but "Coming Soon" prediction category is hidden via hiding header already but links might remain? 
+       Actually the structure puts prediction links in another category div.
+       The CSS .sidebar-section > .sidebar-category logic above might need adjustment if there are multiple categories.
+       Sidebar.js has one section, multiple categories.
+    */
+    .sidebar-category:nth-child(2) {
+        display: none;
+        /* Hide Prediction category ("Coming Soon") on mobile to save space */
     }
 }
 
