@@ -602,6 +602,23 @@ body.dark-mode .token-card.selected-down {
     gap: 0.25rem;
 }
 
+/* Higher specificity to override dark mode defaults */
+.header.home-transparent,
+:root.dark-mode .header.home-transparent,
+body.dark-mode .header.home-transparent {
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-bottom: none !important;
+}
+
+.header.home-transparent::after,
+:root.dark-mode .header.home-transparent::after,
+body.dark-mode .header.home-transparent::after {
+    display: none !important;
+}
+
 .logo:hover {
     opacity: 0.8;
 }
@@ -752,39 +769,130 @@ body.dark-mode .token-card.selected-down {
     opacity: 1;
 }
 
+/* Dream Team Synchronized Loop Animation */
+.team-member-1 {
+    opacity: 1;
+    /* Center pivot stays, or maybe pulses? Keeping static for now as anchor */
+    /* If user wants ALL to go back, we might need to animate this too. 
+       Let's assume the "team surrounds" animate in/out. 
+       If the user meant "the whole team", we can revisit. 
+       For now, usually center is the user/captain. */
+}
+
+/* Common animation properties */
 .team-member-2,
 .team-member-3,
 .team-member-4,
 .team-member-5 {
-    opacity: 0;
-    animation: teamMemberAppear 0.5s ease-out forwards;
+    animation-duration: 4s;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
 }
 
 .team-member-2 {
-    animation-delay: 0.3s;
+    animation-name: teamCycle2;
 }
 
 .team-member-3 {
-    animation-delay: 0.6s;
+    animation-name: teamCycle3;
 }
 
 .team-member-4 {
-    animation-delay: 0.9s;
+    animation-name: teamCycle4;
 }
 
 .team-member-5 {
-    animation-delay: 1.2s;
+    animation-name: teamCycle5;
 }
 
-@keyframes teamMemberAppear {
-    from {
+/* 
+   Cycle Logic (4s total):
+   Appear staggered: ~10% intervals.
+   Disappear TOGETHER: Starting at ~85% to 95%.
+*/
+
+@keyframes teamCycle2 {
+
+    0%,
+    10% {
         opacity: 0;
         transform: scale(0.5) translateY(5px);
     }
 
-    to {
-        opacity: 1;
+    20%,
+    80% {
+        opacity: 0.8;
         transform: scale(1) translateY(0);
+    }
+
+    90%,
+    100% {
+        opacity: 0;
+        transform: scale(0.5) translateY(5px);
+    }
+}
+
+@keyframes teamCycle3 {
+
+    0%,
+    20% {
+        opacity: 0;
+        transform: scale(0.5) translateY(5px);
+    }
+
+    30%,
+    80% {
+        opacity: 0.8;
+        transform: scale(1) translateY(0);
+    }
+
+    90%,
+    100% {
+        opacity: 0;
+        transform: scale(0.5) translateY(5px);
+    }
+}
+
+@keyframes teamCycle4 {
+
+    0%,
+    30% {
+        opacity: 0;
+        transform: scale(0.5) translateY(5px);
+    }
+
+    40%,
+    80% {
+        opacity: 0.6;
+        transform: scale(1) translateY(0);
+    }
+
+    /* slightly lower opacity for back row */
+    90%,
+    100% {
+        opacity: 0;
+        transform: scale(0.5) translateY(5px);
+    }
+}
+
+@keyframes teamCycle5 {
+
+    0%,
+    40% {
+        opacity: 0;
+        transform: scale(0.5) translateY(5px);
+    }
+
+    50%,
+    80% {
+        opacity: 0.6;
+        transform: scale(1) translateY(0);
+    }
+
+    90%,
+    100% {
+        opacity: 0;
+        transform: scale(0.5) translateY(5px);
     }
 }
 
@@ -817,4 +925,103 @@ body.dark-mode .token-card.selected-down {
     100% {
         background-color: transparent;
     }
+}
+
+/* Theme Toggle Switch */
+/* Theme Toggle Switch */
+.theme-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 30px;
+    flex-shrink: 0;
+}
+
+.theme-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.theme-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #6EB6FF;
+    /* Sky Blue for Light Mode */
+    transition: 0.4s;
+    border-radius: 30px;
+    overflow: hidden;
+    border: none;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Clouds (Light Mode Background) */
+.theme-slider:after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    right: 14px;
+    width: 5px;
+    height: 5px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 10px -2px 0 1px #fff;
+    transition: 0.4s;
+    opacity: 1;
+}
+
+/* Knob */
+.theme-slider:before {
+    position: absolute;
+    content: "";
+    height: 24px;
+    width: 24px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 2;
+}
+
+/* Dark Mode State */
+input:checked+.theme-slider {
+    background-color: #0F172A;
+    /* Dark Navy */
+}
+
+/* Stars (Dark Mode Background) - Reusing :after but transforming it */
+input:checked+.theme-slider:after {
+    top: 8px;
+    left: 12px;
+    right: auto;
+    width: 2px;
+    height: 2px;
+    background: #fff;
+    box-shadow:
+        7px 7px 0 0 #fff,
+        12px -3px 0 1px #fff,
+        -3px 10px 0 0 #fff;
+    opacity: 1;
+}
+
+/* Knob Transformation to Moon */
+input:checked+.theme-slider:before {
+    transform: translateX(30px);
+    background-color: transparent;
+    box-shadow: 4px 0 0 0 #fff;
+    /* Sharper, straight crescent */
+    height: 18px;
+    width: 18px;
+    bottom: 6px;
+}
+
+/* Dark mode overrides for the slider track */
+:root.dark-mode .theme-slider {
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
 }

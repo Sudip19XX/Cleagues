@@ -41,83 +41,45 @@ export function createHeader() {
   // Create wallet button
   createWalletButton(walletContainer);
 
-  // Dark mode toggle button
-  const darkModeToggle = document.createElement('button');
-  darkModeToggle.id = 'dark-mode-toggle';
-  darkModeToggle.style.cssText = `
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 1px solid var(--glass-border);
-    background: var(--glass-bg);
-    cursor: pointer;
-    transition: all 0.3s ease;
+  // Dark mode toggle switch
+  const themeSwitch = document.createElement('label');
+  themeSwitch.className = 'theme-switch';
+  // Note: We use the slider-icon classes if we want static icons on the track, but the CSS uses pseudo-elements for now.
+  themeSwitch.innerHTML = `
+    <input type="checkbox" id="dark-mode-checkbox">
+    <span class="theme-slider"></span>
   `;
 
+  const checkbox = themeSwitch.querySelector('input');
+
   // Check if dark mode should be enabled (default to dark mode)
-  // Dark mode is enabled by default unless explicitly set to 'false'
   const isDarkMode = localStorage.getItem('darkMode') !== 'false';
+
+  // Set initial state
   if (isDarkMode) {
     document.documentElement.classList.add('dark-mode');
     document.body.classList.add('dark-mode');
+    checkbox.checked = true;
+  } else {
+    document.documentElement.classList.remove('dark-mode');
+    document.body.classList.remove('dark-mode');
+    checkbox.checked = false;
   }
 
-  // Set initial icon and styling based on current mode
-  const updateToggleIcon = () => {
-    const isDark = document.documentElement.classList.contains('dark-mode');
-    darkModeToggle.innerHTML = isDark ? `
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFD700" stroke-width="2">
-        <circle cx="12" cy="12" r="5"></circle>
-        <line x1="12" y1="1" x2="12" y2="3"></line>
-        <line x1="12" y1="21" x2="12" y2="23"></line>
-        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-        <line x1="1" y1="12" x2="3" y2="12"></line>
-        <line x1="21" y1="12" x2="23" y2="12"></line>
-        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-      </svg>
-    ` : `
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-      </svg>
-    `;
-    darkModeToggle.title = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
-
-    // Update button styling for dark mode - lighter background
-    if (isDark) {
-      darkModeToggle.style.background = 'rgba(255, 255, 255, 0.15)';
-      darkModeToggle.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-      darkModeToggle.style.color = '#FFD700';
+  // Handle toggle change
+  checkbox.addEventListener('change', (e) => {
+    if (e.target.checked) {
+      document.documentElement.classList.add('dark-mode');
+      document.body.classList.add('dark-mode');
+      localStorage.setItem('darkMode', 'true');
     } else {
-      darkModeToggle.style.background = 'var(--glass-bg)';
-      darkModeToggle.style.borderColor = 'var(--glass-border)';
-      darkModeToggle.style.color = 'currentColor';
+      document.documentElement.classList.remove('dark-mode');
+      document.body.classList.remove('dark-mode');
+      localStorage.setItem('darkMode', 'false');
     }
-  };
-
-  updateToggleIcon();
-
-  darkModeToggle.addEventListener('click', () => {
-    document.documentElement.classList.toggle('dark-mode');
-    document.body.classList.toggle('dark-mode');
-    const isDark = document.documentElement.classList.contains('dark-mode');
-    localStorage.setItem('darkMode', isDark);
-    updateToggleIcon();
   });
 
-  darkModeToggle.addEventListener('mouseenter', () => {
-    darkModeToggle.style.transform = 'scale(1.1)';
-  });
-
-  darkModeToggle.addEventListener('mouseleave', () => {
-    darkModeToggle.style.transform = 'scale(1)';
-  });
-
-  walletContainer.appendChild(darkModeToggle);
+  walletContainer.appendChild(themeSwitch);
 
   // Assemble header
   container.appendChild(logo);

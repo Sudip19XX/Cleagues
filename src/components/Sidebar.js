@@ -45,31 +45,32 @@ export function createSidebar() {
               </svg>
               <span>Dream Team</span>
             </a>
-            
-            <a href="#crypto-duel" class="sidebar-link" data-page="crypto-duel">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <style>
-                  @keyframes vs-pulse {
-                    0%, 100% { transform: scale(1); }
-                    50% { transform: scale(1.2); }
-                  }
-                  .vs-text { 
-                    fill: currentColor; 
-                    stroke: none; 
-                    transition: fill 0.2s; 
-                    transform-origin: center; 
-                    transform-box: fill-box;
-                  }
-                  .sidebar-link.active .vs-text { 
-                    fill: #09C285; 
-                    animation: vs-pulse 1.5s infinite ease-in-out;
-                  }
-                </style>
-                <text x="12" y="16" font-size="12" font-weight="bold" text-anchor="middle" class="vs-text">VS</text>
-              </svg>
-              <span>Crypto Duel</span>
+            <a href="#pvp-battle" class="sidebar-link" data-page="pvp-battle">
+               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                 <style>
+                   @keyframes swords-pulse {
+                     0%, 100% { transform: scale(1); }
+                     50% { transform: scale(1.1); }
+                   }
+                   .sidebar-link.active .swords-path {
+                     stroke: #09C285;
+                     animation: swords-pulse 1.5s infinite ease-in-out;
+                     transform-origin: center;
+                     transform-box: fill-box;
+                   }
+                 </style>
+                 <g class="swords-path">
+                   <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                   <path d="M21 3v5l-11 9l-4 4l-3 -3l4 -4l9 -11z" />
+                   <path d="M5 13l6 6" />
+                   <path d="M14.32 17.32l3.68 3.68l3 -3l-3.365 -3.365" />
+                   <path d="M10 5.5l-2 -2.5h-5v5l3 2.5" />
+                 </g>
+               </svg>
+               <span>PvP Battle</span>
             </a>
             
+
             <a href="#predict-candle" class="sidebar-link" data-page="predict-candle">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2">
                 <style>
@@ -121,6 +122,32 @@ export function createSidebar() {
               </svg>
               <span>1min Frenzy</span>
             </a>
+
+            <a href="#crypto-duel" class="sidebar-link" data-page="crypto-duel">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <style>
+                  @keyframes vs-pulse {
+                    0%, 100% { transform: scale(1); }
+                    50% { transform: scale(1.2); }
+                  }
+                  .vs-text { 
+                    fill: currentColor; 
+                    stroke: none; 
+                    transition: fill 0.2s; 
+                    transform-origin: center; 
+                    transform-box: fill-box;
+                  }
+                  .sidebar-link.active .vs-text { 
+                    fill: #09C285; 
+                    animation: vs-pulse 1.5s infinite ease-in-out;
+                  }
+                </style>
+                <text x="12" y="16" font-size="12" font-weight="bold" text-anchor="middle" class="vs-text">VS</text>
+              </svg>
+              <span>Crypto Duel</span>
+            </a>
+
+
           </div>
         </div>
         

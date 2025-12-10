@@ -7,6 +7,7 @@ import { createCryptoDuel } from './components/games/CryptoDuel.js';
 import { createDreamTeam } from './components/games/DreamTeam.js';
 import { createTimeBasedAction } from './components/games/TimeBasedAction.js';
 import { createPredictCandle } from './components/games/PredictCandle.js';
+import { createPvPBattle } from './components/games/PvPBattle.js';
 import { createPendingActionWidget, onRouteChange } from './components/PendingActionWidget.js';
 
 // Simple router state
@@ -14,14 +15,15 @@ let currentRoute = '/';
 let sidebarElement = null;
 let appContainerElement = null;
 let mainElement = null;
+let headerElement = null;
 
 export function createApp() {
     const app = document.createElement('div');
     app.className = 'app';
 
     // Create header
-    const header = createHeader();
-    app.appendChild(header);
+    headerElement = createHeader();
+    app.appendChild(headerElement);
 
     // Create app container for sidebar + main content
     appContainerElement = document.createElement('div');
@@ -72,7 +74,15 @@ function renderRoute(container) {
     currentRoute = path;
 
     // Determine if sidebar should be shown
-    const isGameMode = ['/crypto-duel', '/dream-team', '/time-based', '/predict-candle'].includes(path);
+    const isGameMode = ['/crypto-duel', '/dream-team', '/time-based', '/predict-candle', '/pvp-battle'].includes(path);
+
+    if (headerElement) {
+        if (path === '/') {
+            headerElement.classList.add('home-transparent');
+        } else {
+            headerElement.classList.remove('home-transparent');
+        }
+    }
 
     // Show/hide sidebar based on route
     if (sidebarElement) {
@@ -111,6 +121,9 @@ function renderRoute(container) {
             break;
         case '/predict-candle':
             component = createPredictCandle();
+            break;
+        case '/pvp-battle':
+            component = createPvPBattle();
             break;
         default:
             component = create404Page();

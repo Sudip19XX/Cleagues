@@ -52,49 +52,28 @@ export const SOLANA_NETWORKS = {
 export const GAME_MODES = {
   CRYPTO_DUEL: {
     name: 'Crypto Duel',
-    description: 'Pick two tokens and predict which will outperform',
+    description: "Select two distinct tokens and predict which will outperform the other in real-time. It's a battle of relative strength—choose the stronger contender to claim victory.",
     path: '/crypto-duel',
     icon: `<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <linearGradient id="coin-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient id="vs-grad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" style="stop-color:#09C285"/>
               <stop offset="100%" style="stop-color:#07a371"/>
             </linearGradient>
           </defs>
-          <!-- Left coin (Bitcoin) - slides in from left -->
-          <g class="coin-left">
-            <circle cx="18" cy="32" r="14" fill="url(#coin-grad)" opacity="0.9"/>
-            <circle cx="18" cy="32" r="10" fill="none" stroke="#FFFFFF" stroke-width="2"/>
-            <text x="18" y="36" text-anchor="middle" fill="#FFFFFF" font-size="12" font-weight="bold">₿</text>
-          </g>
-          
-          <!-- VS text in center -->
-          <g class="vs-badge">
-            <circle cx="32" cy="32" r="8" fill="#FFFFFF" stroke="url(#coin-grad)" stroke-width="2"/>
-            <text x="32" y="36" text-anchor="middle" fill="#09C285" font-size="10" font-weight="bold">VS</text>
-          </g>
-          
-          <!-- Right coin (Ethereum) - slides in from right -->
-          <g class="coin-right">
-            <circle cx="46" cy="32" r="14" fill="url(#coin-grad)" opacity="0.9"/>
-            <circle cx="46" cy="32" r="10" fill="none" stroke="#FFFFFF" stroke-width="2"/>
-            <text x="46" y="36" text-anchor="middle" fill="#FFFFFF" font-size="12" font-weight="bold">Ξ</text>
-          </g>
-          
-          <!-- Impact/clash effects -->
-          <g class="clash-effects">
-            <line x1="32" y1="18" x2="32" y2="14" stroke="#09C285" stroke-width="2.5" stroke-linecap="round"/>
-            <line x1="32" y1="46" x2="32" y2="50" stroke="#09C285" stroke-width="2.5" stroke-linecap="round"/>
-            <line x1="26" y1="22" x2="23" y2="19" stroke="#09C285" stroke-width="2" stroke-linecap="round"/>
-            <line x1="38" y1="22" x2="41" y2="19" stroke="#09C285" stroke-width="2" stroke-linecap="round"/>
-            <line x1="26" y1="42" x2="23" y2="45" stroke="#09C285" stroke-width="2" stroke-linecap="round"/>
-            <line x1="38" y1="42" x2="41" y2="45" stroke="#09C285" stroke-width="2" stroke-linecap="round"/>
-          </g>
+          <style>
+             @keyframes pulse-vs {
+               0%, 100% { transform: scale(1); }
+               50% { transform: scale(1.1); }
+             }
+             .vs-text { animation: pulse-vs 2s ease-in-out infinite; transform-origin: center; }
+          </style>
+          <text x="32" y="42" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="32" fill="#09C285" style="font-style: italic; letter-spacing: -2px;" class="vs-text">VS</text>
         </svg>`,
   },
   DREAM_TEAM: {
     name: 'Dream Team',
-    description: 'Build your ultimate crypto portfolio of 15 tokens',
+    description: 'Assemble a squad of 15 tokens, predict market movements, and outperform other players. Climb the leaderboards & get massive rewards.',
     path: '/dream-team',
     icon: `<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -105,82 +84,82 @@ export const GAME_MODES = {
           </defs>
           <!-- Center person (appears first) -->
           <g class="team-member-1">
-            <circle cx="32" cy="22" r="6" fill="url(#team-grad)"/>
-            <path d="M20 48C20 38 25 34 32 34C39 34 44 38 44 48" fill="url(#team-grad)"/>
+            <circle cx="32" cy="22" r="6" fill="url(#team-grad)" stroke="none"/>
+            <path d="M20 48C20 38 25 34 32 34C39 34 44 38 44 48" fill="url(#team-grad)" stroke="none"/>
           </g>
           
           <!-- Left front person (appears second - 0.5s delay) -->
           <g class="team-member-2">
-            <circle cx="16" cy="26" r="5" fill="url(#team-grad)" opacity="0.8"/>
-            <path d="M8 48C8 40 11 36 16 36C21 36 24 40 24 48" fill="url(#team-grad)" opacity="0.8"/>
+            <circle cx="16" cy="26" r="5" fill="url(#team-grad)" opacity="0.8" stroke="none"/>
+            <path d="M8 48C8 40 11 36 16 36C21 36 24 40 24 48" fill="url(#team-grad)" opacity="0.8" stroke="none"/>
           </g>
           
           <!-- Right front person (appears third - 1s delay) -->
           <g class="team-member-3">
-            <circle cx="48" cy="26" r="5" fill="url(#team-grad)" opacity="0.8"/>
-            <path d="M40 48C40 40 43 36 48 36C53 36 56 40 56 48" fill="url(#team-grad)" opacity="0.8"/>
+            <circle cx="48" cy="26" r="5" fill="url(#team-grad)" opacity="0.8" stroke="none"/>
+            <path d="M40 48C40 40 43 36 48 36C53 36 56 40 56 48" fill="url(#team-grad)" opacity="0.8" stroke="none"/>
           </g>
           
           <!-- Left back person (appears fourth - 1.5s delay) -->
           <g class="team-member-4">
-            <circle cx="10" cy="30" r="4" fill="url(#team-grad)" opacity="0.6"/>
-            <path d="M4 48C4 42 6 38 10 38C14 38 16 42 16 48" fill="url(#team-grad)" opacity="0.6"/>
+            <circle cx="10" cy="30" r="4" fill="url(#team-grad)" opacity="0.6" stroke="none"/>
+            <path d="M4 48C4 42 6 38 10 38C14 38 16 42 16 48" fill="url(#team-grad)" opacity="0.6" stroke="none"/>
           </g>
           
           <!-- Right back person (appears fifth - 2s delay) -->
           <g class="team-member-5">
-            <circle cx="54" cy="30" r="4" fill="url(#team-grad)" opacity="0.6"/>
-            <path d="M48 48C48 42 50 38 54 38C58 38 60 42 60 48" fill="url(#team-grad)" opacity="0.6"/>
+            <circle cx="54" cy="30" r="4" fill="url(#team-grad)" opacity="0.6" stroke="none"/>
+            <path d="M48 48C48 42 50 38 54 38C58 38 60 42 60 48" fill="url(#team-grad)" opacity="0.6" stroke="none"/>
           </g>
         </svg>`,
   },
   TIME_BASED: {
     name: '1min Frenzy',
-    description: 'Make quick decisions before time runs out',
+    description: "Feel the rush with quick decisions. Predict the price movement in just 60 seconds. Beat the high-intensity race against time.",
     path: '/time-based',
     icon: `<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <style>
-            @keyframes tick {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-            .stopwatch-hand {
-              transform-origin: 32px 34px;
-              animation: tick 2s steps(60) infinite;
-            }
-          </style>
-          
           <defs>
             <linearGradient id="time-grad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" style="stop-color:#09C285"/>
               <stop offset="100%" style="stop-color:#07a371"/>
             </linearGradient>
           </defs>
+          <style>
+              @keyframes tick-tock {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+              }
+              .clock-hand {
+                  transform-origin: 32px 36px;
+                  animation: tick-tock 2s linear infinite;
+              }
+          </style>
+
+          <!-- Top Plunger Button (y=16 to 20) -->
+          <rect x="25" y="16" width="14" height="4" rx="2" stroke="url(#time-grad)" stroke-width="2.5" fill="none"/>
           
-          <!-- Stopwatch Body -->
-          <circle cx="32" cy="34" r="22" stroke="url(#time-grad)" stroke-width="3" fill="none"/>
-          <circle cx="32" cy="34" r="22" stroke="url(#time-grad)" stroke-width="3" fill="url(#time-grad)" opacity="0.1"/>
-          
-          <!-- Top Button -->
-          <path d="M26 6H38V10H26V6Z" fill="url(#time-grad)"/>
-          <rect x="30" y="2" width="4" height="4" fill="url(#time-grad)"/>
-          
-          <!-- Ticks -->
-          <path d="M32 16V19" stroke="url(#time-grad)" stroke-width="2" stroke-linecap="round"/>
-          <path d="M32 49V52" stroke="url(#time-grad)" stroke-width="2" stroke-linecap="round"/>
-          <path d="M47 34H44" stroke="url(#time-grad)" stroke-width="2" stroke-linecap="round"/>
-          <path d="M17 34H20" stroke="url(#time-grad)" stroke-width="2" stroke-linecap="round"/>
-          
-          <!-- Hand -->
-          <line x1="32" y1="34" x2="32" y2="20" stroke="#FF4D4F" stroke-width="2" stroke-linecap="round" class="stopwatch-hand"/>
+          <!-- Stem (y=20 to 24) -->
+          <path d="M32 20 V 24" stroke="url(#time-grad)" stroke-width="2.5"/>
+
+          <!-- Body (y=24 to 48, cy=36, r=12) -->
+          <circle cx="32" cy="36" r="12" stroke="url(#time-grad)" stroke-width="2.5"/>
+
+          <!-- Side Button -->
+          <path d="M42 27 L45 24" stroke="url(#time-grad)" stroke-width="2.5" stroke-linecap="round"/>
+
+          <!-- Hands -->
+          <g class="clock-hand">
+             <path d="M32 36 V 28" stroke="url(#time-grad)" stroke-width="2.5" stroke-linecap="round"/>
+             <path d="M32 36 L 37 41" stroke="url(#time-grad)" stroke-width="2.5" stroke-linecap="round"/>
+          </g>
           
           <!-- Center Dot -->
-          <circle cx="32" cy="34" r="3" fill="#3B82F6"/>
+          <circle cx="32" cy="36" r="2" fill="url(#time-grad)"/>
         </svg>`,
   },
   PREDICT_CANDLE: {
     name: 'Predict Candle',
-    description: 'Forecast if the next candle will be green or red',
+    description: 'Put your technical analysis skills to the test. Study market patterns to forecast the direction of the upcoming candle. Will it close green or red?',
     path: '/predict-candle',
     icon: `<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -189,43 +168,106 @@ export const GAME_MODES = {
               <stop offset="100%" style="stop-color:#07a371"/>
             </linearGradient>
             <linearGradient id="red-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" style="stop-color:#FF4D4F"/>
-              <stop offset="100%" style="stop-color:#ff3336"/>
+              <stop offset="0%" style="stop-color:#EF4444"/>
+              <stop offset="100%" style="stop-color:#DC2626"/>
             </linearGradient>
           </defs>
-          <!-- Candle 1 - Green (animates) -->
-          <g class="candle-1">
-            <line x1="10" y1="20" x2="10" y2="48" stroke="url(#green-grad)" stroke-width="1.5"/>
-            <rect x="7" y="28" width="6" height="16" fill="url(#green-grad)" rx="1"/>
+          <style>
+            @keyframes slide-up {
+              0% { opacity: 0; transform: translateY(15px); }
+              20% { opacity: 1; transform: translateY(0); }
+              80% { opacity: 1; transform: translateY(0); }
+              100% { opacity: 0; transform: translateY(0); }
+            }
+            @keyframes slide-down {
+              0% { opacity: 0; transform: translateY(-15px); }
+              20% { opacity: 1; transform: translateY(0); }
+              80% { opacity: 1; transform: translateY(0); }
+              100% { opacity: 0; transform: translateY(0); }
+            }
+            
+            .c-anim { opacity: 0; }
+            
+            .candle-1 { animation: slide-up 4s ease-out infinite; animation-delay: 0s; }
+            .candle-2 { animation: slide-down 4s ease-out infinite; animation-delay: 0.8s; }
+            .candle-3 { animation: slide-up 4s ease-out infinite; animation-delay: 1.6s; }
+            .candle-4 { animation: slide-down 4s ease-out infinite; animation-delay: 2.4s; }
+            .candle-5 { animation: slide-up 4s ease-out infinite; animation-delay: 3.2s; }
+          </style>
+
+          <!-- Candle 1 - Green (Up) -->
+          <g class="candle-1 c-anim">
+            <line x1="12" y1="20" x2="12" y2="48" stroke="url(#green-grad)" stroke-width="2"/>
+            <rect x="9" y="30" width="6" height="12" fill="url(#green-grad)" rx="1" stroke="none"/>
           </g>
           
-          <!-- Candle 2 - Red (animates) -->
-          <g class="candle-2">
-            <line x1="20" y1="16" x2="20" y2="44" stroke="url(#red-grad)" stroke-width="1.5"/>
-            <rect x="17" y="24" width="6" height="12" fill="url(#red-grad)" rx="1"/>
+          <!-- Candle 2 - Red (Down) -->
+          <g class="candle-2 c-anim">
+            <line x1="22" y1="18" x2="22" y2="46" stroke="url(#red-grad)" stroke-width="2"/>
+            <rect x="19" y="24" width="6" height="12" fill="url(#red-grad)" rx="1" stroke="none"/>
           </g>
           
-          <!-- Candle 3 - Green (animates) -->
-          <g class="candle-3">
-            <line x1="30" y1="22" x2="30" y2="50" stroke="url(#green-grad)" stroke-width="1.5"/>
-            <rect x="27" y="30" width="6" height="14" fill="url(#green-grad)" rx="1"/>
+          <!-- Candle 3 - Green (Up) -->
+          <g class="candle-3 c-anim">
+            <line x1="32" y1="22" x2="32" y2="50" stroke="url(#green-grad)" stroke-width="2"/>
+            <rect x="29" y="32" width="6" height="14" fill="url(#green-grad)" rx="1" stroke="none"/>
           </g>
           
-          <!-- Candle 4 - Red (animates) -->
-          <g class="candle-4">
-            <line x1="40" y1="18" x2="40" y2="46" stroke="url(#red-grad)" stroke-width="1.5"/>
-            <rect x="37" y="26" width="6" height="14" fill="url(#red-grad)" rx="1"/>
+          <!-- Candle 4 - Red (Down) -->
+          <g class="candle-4 c-anim">
+            <line x1="42" y1="16" x2="42" y2="44" stroke="url(#red-grad)" stroke-width="2"/>
+            <rect x="39" y="22" width="6" height="14" fill="url(#red-grad)" rx="1" stroke="none"/>
           </g>
           
-          <!-- Candle 5 - Green (animates) -->
-          <g class="candle-5">
-            <line x1="50" y1="14" x2="50" y2="42" stroke="url(#green-grad)" stroke-width="1.5"/>
-            <rect x="47" y="22" width="6" height="16" fill="url(#green-grad)" rx="1"/>
+          <!-- Candle 5 - Green (Up) -->
+          <g class="candle-5 c-anim">
+            <line x1="52" y1="14" x2="52" y2="42" stroke="url(#green-grad)" stroke-width="2"/>
+            <rect x="49" y="20" width="6" height="16" fill="url(#green-grad)" rx="1" stroke="none"/>
           </g>
-          
-          <!-- Trend line -->
-          <path d="M6 46 L16 38 L26 42 L36 34 L46 36 L56 28" stroke="#09C285" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.5"/>
         </svg>`,
+  },
+  PVP_MODE: {
+    name: 'PvP Battle',
+    description: 'One player goes Long, the other goes Short—only <strong>one can win</strong>. Lock in your prediction and challenge an opponent in this winner-takes-all showdown.',
+    path: '/pvp-battle', // Placeholder path
+    icon: `<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <style>
+        @keyframes clash-l-strike {
+           0%, 100% { transform: translate(0, 0) rotate(0deg); } /* Crossed Guard */
+           20% { transform: translate(-4px, 4px) rotate(-15deg); } /* Windup (Pull back) */
+           40% { transform: translate(2px, -2px) rotate(5deg); } /* Strike/Clash! */
+           60% { transform: translate(0, 0) rotate(0deg); } /* Recoil/Return */
+        }
+        @keyframes clash-r-strike {
+           0%, 100% { transform: translate(0, 0) rotate(0deg); } /* Crossed Guard */
+           20% { transform: translate(4px, 4px) rotate(15deg); } /* Windup (Pull back) */
+           40% { transform: translate(-2px, -2px) rotate(-5deg); } /* Strike/Clash! */
+           60% { transform: translate(0, 0) rotate(0deg); } /* Recoil/Return */
+        }
+        .sword-main-l {
+           transform-origin: center;
+           animation: clash-l-strike 1.2s infinite ease-in-out;
+           transform-box: fill-box;
+        }
+        .sword-main-r {
+           transform-origin: center;
+           animation: clash-r-strike 1.2s infinite ease-in-out;
+           transform-box: fill-box;
+        }
+      </style>
+      <g transform="translate(14, 14) scale(1.5)">
+        <!-- Green Sword (Left/Up) -->
+        <g class="sword-main-l">
+          <path d="M21 3v5l-11 9l-4 4l-3 -3l4 -4l9 -11z" stroke="#09C285" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M5 13l6 6" stroke="#09C285" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+        <!-- Red Sword (Right/Down) -->
+        <g class="sword-main-r">
+          <path d="M14.32 17.32l3.68 3.68l3 -3l-3.365 -3.365" stroke="#EF4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M10 5.5l-2 -2.5h-5v5l3 2.5" stroke="#EF4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+      </g>
+    </svg>`,
   },
 };
 
