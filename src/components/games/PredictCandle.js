@@ -1,6 +1,14 @@
 // Predict the Candle Game Component
 // Uses real-time Binance candlestick data
 
+// ==========================================
+// 🧪 TEST MODE ENABLED
+// ==========================================
+// For production testing - no real USDC required
+// Bets are simulated, winners get mock rewards
+// ==========================================
+const TEST_MODE = true;
+
 import {
   getAvailableTokens,
   fetchHistoricalCandles,
@@ -70,8 +78,25 @@ export function createPredictCandle() {
       Predict the Candle
     </h1>
     <p style="color: var(--color-text-secondary); font-size: 1.125rem;">
-      Predict if the next candle will be green (up) or red (down)
+      Predict if the next candle will be green (up) or red (down). <span style="color: var(--color-text-primary); font-weight: 600;">Bets are temporarily capped at $10.</span>
     </p>
+    ${TEST_MODE ? `
+    <div style="
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: var(--spacing-md);
+      padding: 8px 20px;
+      background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 165, 0, 0.1) 100%);
+      border: 1px solid rgba(255, 215, 0, 0.4);
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #FFD700;
+    ">
+      🧪 TEST MODE - No real USDC required
+    </div>
+    ` : ''}
   `;
   container.appendChild(header);
 
@@ -502,8 +527,13 @@ async function createCandleCard(token, interval, timeframeMinutes) {
       </button>
     </div>
 
-    <!-- Amount Input with Balance inside -->
+    <!-- Amount Input with Balance Label -->
     <div style="margin-bottom: var(--spacing-md);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 0.85rem; font-weight: 600; color: var(--color-text-secondary);">Bet Amount (USDC)</span>
+        <span class="balance-display" style="font-size: 0.85rem; font-weight: 600; color: ${TEST_MODE ? '#FFD700' : 'var(--color-text-primary)'}; text-align: right;">${TEST_MODE ? '🧪 Test Mode' : (walletManager.getState().connected ? 'Bal: $0.00' : '')}</span>
+      </div>
+
       <div style="display: flex; gap: 8px; align-items: center;">
         <div style="position: relative; flex: 1;">
           <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 0.9rem; font-weight: 700; color: var(--color-text-muted);">$</span>
@@ -513,11 +543,12 @@ async function createCandleCard(token, interval, timeframeMinutes) {
             data-token="${token.symbol}"
             placeholder="0" 
             min="1" 
+            max="10"
             step="1"
             value=""
             style="
               width: 100%;
-              padding: 10px 55px 10px 26px;
+              padding: 10px 12px 10px 26px;
               background: rgba(255, 255, 255, 0.08);
               border: 1px solid rgba(255, 255, 255, 0.15);
               border-radius: 10px;
@@ -530,7 +561,6 @@ async function createCandleCard(token, interval, timeframeMinutes) {
               -moz-appearance: textfield;
             "
           />
-          <span class="balance-display" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.65rem; color: var(--color-text-muted); opacity: 0.7; white-space: nowrap;">${walletManager.getState().connected ? '/ $0.00' : ''}</span>
         </div>
         <div style="display: flex; gap: 6px;">
           <button class="quick-amount-btn" data-amount="5" style="
@@ -547,7 +577,7 @@ async function createCandleCard(token, interval, timeframeMinutes) {
             align-items: center;
             justify-content: center;
             white-space: nowrap;
-          ">+5</button>
+          ">$5</button>
           <button class="quick-amount-btn" data-amount="10" style="
             padding: 8px 12px;
             background: rgba(255, 255, 255, 0.05);
@@ -562,22 +592,7 @@ async function createCandleCard(token, interval, timeframeMinutes) {
             align-items: center;
             justify-content: center;
             white-space: nowrap;
-          ">+10</button>
-          <button class="quick-amount-btn" data-amount="max" style="
-            padding: 8px 12px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 8px;
-            color: var(--color-text-primary);
-            font-weight: 600;
-            font-size: 0.75rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            white-space: nowrap;
-          ">Max</button>
+          ">$10</button>
         </div>
       </div>
     </div>
@@ -674,18 +689,35 @@ async function createCandleCard(token, interval, timeframeMinutes) {
   });
 
   // Wager input change
-  wagerInput.addEventListener('input', updateSubmitButton);
+  wagerInput.addEventListener('input', () => {
+    const val = parseFloat(wagerInput.value);
+    if (val > 10) {
+      wagerInput.value = 10;
+    }
+    updateSubmitButton();
+  });
 
   // Subscribe to wallet state changes to update balance
   const balanceDisplay = card.querySelector('.balance-display');
   let userBalance = 0; // Will be fetched from wallet in production
 
   const updateBalance = async (state) => {
+    // In test mode, always show test mode indicator
+    if (TEST_MODE) {
+      balanceDisplay.textContent = '🧪 Test Mode';
+      balanceDisplay.style.color = '#FFD700';
+      return;
+    }
+
     if (state.connected) {
-      // In production, fetch actual USDC balance here
-      // For now, use mock balance
-      userBalance = 0; // Replace with actual balance fetch
-      balanceDisplay.textContent = `/ $${userBalance.toFixed(2)}`;
+      try {
+        const balance = await walletManager.getUSDCBalance();
+        userBalance = parseFloat(balance);
+        balanceDisplay.textContent = `Bal: $${balance}`;
+      } catch (e) {
+        console.error('Failed to update balance', e);
+        balanceDisplay.textContent = 'Bal: $0.00';
+      }
     } else {
       userBalance = 0;
       balanceDisplay.textContent = '';
@@ -705,16 +737,7 @@ async function createCandleCard(token, interval, timeframeMinutes) {
   card.querySelectorAll('.quick-amount-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const amount = btn.dataset.amount;
-      if (amount === 'max') {
-        if (!walletManager.getState().connected) {
-          alert('Please connect your wallet first!');
-          return;
-        }
-        wagerInput.value = userBalance || 0;
-      } else {
-        const currentVal = parseFloat(wagerInput.value) || 0;
-        wagerInput.value = currentVal + parseInt(amount);
-      }
+      wagerInput.value = amount;
       updateSubmitButton();
     });
   });
@@ -1023,6 +1046,10 @@ async function submitPrediction(tokenSymbol, prediction, tokenName, timeframe, w
   button.innerHTML = '<div class="loading"></div>';
 
   try {
+    if (TEST_MODE) {
+      console.log(`🧪 [TEST MODE] Placing ${prediction.toUpperCase()} prediction for ${tokenSymbol} - $${wagerAmount} USDC`);
+    }
+
     const result = await submitCandlePrediction({
       token: tokenSymbol,
       isGreen: prediction === 'green',

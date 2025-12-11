@@ -2,7 +2,9 @@
 
 import walletManager from './walletManager.js';
 import { formatAddress } from '../utils/formatters.js';
-import { CHAINS } from '../utils/constants.js';
+import { CHAINS, EVM_NETWORKS } from '../utils/constants.js';
+
+
 
 export function createWalletButton(container) {
   const button = document.createElement('button');
@@ -214,7 +216,15 @@ function showWalletMenu(button) {
   `;
 
   const state = walletManager.getState();
-  const chainLabel = state.chain === CHAINS.EVM ? 'EVM' : 'SOL';
+  let chainLabel = state.chain === CHAINS.EVM ? 'EVM' : 'SOL';
+
+  if (state.chain === CHAINS.EVM && state.chainId) {
+    const network = Object.values(EVM_NETWORKS).find(n => n.id === state.chainId);
+    if (network) chainLabel = network.name;
+  } else if (state.chain === CHAINS.SOLANA) {
+    chainLabel = 'Solana';
+  }
+
   const chainColor = state.chain === CHAINS.EVM ? '#E2761B' : '#9945FF';
 
   menu.innerHTML = `
@@ -234,8 +244,46 @@ function showWalletMenu(button) {
         </svg>
       </button>
     </div>
+
+    <!-- Balance -->
+    <div style="padding: 0 var(--spacing-md) var(--spacing-sm); display: flex; align-items: center; justify-content: center; gap: var(--spacing-xs); margin-bottom: var(--spacing-xs);">
+       <span style="font-size: 0.9rem; font-weight: 700; color: var(--color-text-primary); display: flex; align-items: center; gap: 6px;" id="wallet-menu-balance">
+         <div class="loading-dots" style="width: 20px;">...</div>
+       </span>
+    </div>
     
     <div style="height: 1px; background: var(--glass-border); margin: var(--spacing-xs) 0;"></div>
+
+    <!-- Network Helpers (EVM Only) -->
+    ${state.chain === CHAINS.EVM ? `
+      <!-- Switch to Base Mainnet -->
+      ${state.chainId !== 8453 ? `
+      <div class="wallet-menu-item" id="switch-base" style="padding: var(--spacing-sm) var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-sm); cursor: pointer;">
+        <div style="width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; background: #0052FF; border-radius: 50%; color: white; font-weight: bold; font-size: 10px;">B</div>
+        <span style="flex: 1; font-size: 0.9rem;">Switch to Base</span>
+      </div>
+      ` : ''}
+
+      <!-- Switch to Polygon -->
+      ${state.chainId !== 137 ? `
+      <div class="wallet-menu-item" id="switch-polygon" style="padding: var(--spacing-sm) var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-sm); cursor: pointer;">
+        <div style="width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; background: #8247E5; border-radius: 50%; color: white; font-weight: bold; font-size: 10px;">P</div>
+        <span style="flex: 1; font-size: 0.9rem;">Switch to Polygon</span>
+      </div>
+      ` : ''}
+
+      <!-- Switch to Base Sepolia (Dev Only/Testing) -->
+      ${state.chainId !== 84532 ? `
+      <div class="wallet-menu-item" id="switch-sepolia" style="padding: var(--spacing-sm) var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-sm); cursor: pointer; opacity: 0.8;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
+        </svg>
+        <span style="flex: 1; font-size: 0.9rem;">Base Sepolia (Test)</span>
+      </div>
+      ` : ''}
+      
+      <div style="height: 1px; background: var(--glass-border); margin: var(--spacing-xs) 0;"></div>
+    ` : ''}
     
     <!-- Rewards -->
     <div class="wallet-menu-item" style="padding: var(--spacing-sm) var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-sm); cursor: pointer;">
@@ -303,6 +351,23 @@ function showWalletMenu(button) {
   button.style.position = 'relative';
   button.appendChild(menu);
 
+  // Fetch and display balance
+  walletManager.getUSDCBalance().then(balance => {
+    const balanceEl = menu.querySelector('#wallet-menu-balance');
+    if (balanceEl) {
+      balanceEl.innerHTML = `
+        <span style="color: var(--color-text-secondary); font-weight: 500; font-size: 0.8rem;">USDC:</span>
+        $${balance}
+      `;
+    }
+  }).catch(err => {
+    console.error('Failed to fetch balance for menu:', err);
+    const balanceEl = menu.querySelector('#wallet-menu-balance');
+    if (balanceEl) {
+      balanceEl.textContent = 'USDC: $0.00';
+    }
+  });
+
   // Copy address handler
   menu.querySelector('#copy-address').addEventListener('click', (e) => {
     e.stopPropagation();
@@ -328,6 +393,34 @@ function showWalletMenu(button) {
     await walletManager.disconnect();
     menu.remove();
   });
+
+  // Switch to Base handler
+  const switchBaseBtn = menu.querySelector('#switch-base');
+  if (switchBaseBtn) {
+    switchBaseBtn.addEventListener('click', async () => {
+      await walletManager.switchNetwork(8453);
+      menu.remove();
+    });
+  }
+
+  // Switch to Polygon handler
+  const switchPolygonBtn = menu.querySelector('#switch-polygon');
+  if (switchPolygonBtn) {
+    switchPolygonBtn.addEventListener('click', async () => {
+      await walletManager.switchNetwork(137);
+      menu.remove();
+    });
+  }
+
+  // Switch to Sepolia handler
+  const switchSepoliaBtn = menu.querySelector('#switch-sepolia');
+  if (switchSepoliaBtn) {
+    switchSepoliaBtn.addEventListener('click', async () => {
+      await walletManager.switchNetwork(84532);
+      // Note: switchNetwork usually triggers reload or state update via listener
+      menu.remove();
+    });
+  }
 
   // Close menu when clicking outside
   setTimeout(() => {

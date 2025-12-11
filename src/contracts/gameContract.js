@@ -46,6 +46,7 @@ export async function submitDuelPrediction(prediction) {
  */
 export async function submitDreamTeam(payload) {
     const { team, captainIndex, viceCaptainIndex } = payload;
+    const ENTRY_FEE = 5; // 5 USDC
 
     console.log('Submitting dream team:', payload);
 
@@ -55,10 +56,12 @@ export async function submitDreamTeam(payload) {
             throw new Error('Wallet not connected');
         }
 
-        if (team.length !== 15) {
-            throw new Error('Team must have exactly 15 tokens');
+        if (team.length !== 12) {
+            throw new Error('Team must have exactly 12 tokens');
         }
 
+        // TODO: Add real USDC transfer when smart contracts are ready
+        // For now, simulate the transaction
         await simulateTransaction();
 
         const teamId = Math.floor(Math.random() * 1000000);
@@ -67,6 +70,7 @@ export async function submitDreamTeam(payload) {
             success: true,
             teamId,
             txHash: `0x${Math.random().toString(16).substring(2, 66)}`,
+            entryFee: ENTRY_FEE,
             message: 'Team submitted successfully!',
         };
     } catch (error) {

@@ -32,6 +32,12 @@ export const EVM_NETWORKS = {
     rpcUrl: 'https://mainnet.base.org',
     blockExplorer: 'https://basescan.org',
   },
+  BASE_SEPOLIA: {
+    id: 84532,
+    name: 'Base Sepolia',
+    rpcUrl: 'https://sepolia.base.org',
+    blockExplorer: 'https://sepolia.basescan.org',
+  },
 };
 
 // Solana Networks
@@ -54,6 +60,7 @@ export const USDC_ADDRESSES = {
   [EVM_NETWORKS.POLYGON.id]: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359', // Native USDC
   [EVM_NETWORKS.ARBITRUM.id]: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
   [EVM_NETWORKS.BASE.id]: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+  [EVM_NETWORKS.BASE_SEPOLIA.id]: '0x036CbD53842c5426634e7929541eC2318f3dCF7e', // Base Sepolia USDC
   SOLANA: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // Native USDC on Solana
 };
 
@@ -82,7 +89,7 @@ export const GAME_MODES = {
   },
   DREAM_TEAM: {
     name: 'Dream Team',
-    description: 'Assemble a squad of 15 tokens, predict market movements, and outperform other players. Climb the leaderboards & get massive rewards.',
+    description: 'Assemble a squad of 12 tokens, predict market movements, and outperform other players. Climb the leaderboards & get massive rewards.',
     path: '/dream-team',
     icon: `<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>

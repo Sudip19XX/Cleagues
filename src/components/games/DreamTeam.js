@@ -1,6 +1,7 @@
 // Dream Team Game Component
 
-import { fetchTopTokens, searchTokens, getCompetitionTimeInfo } from '../../services/priceService.js';
+import { fetchTopTokens, searchTokens, getCompetitionTimeInfo, getUTCOpeningPrices, getCachedOpeningPrices, hasValidPriceCache } from '../../services/priceService.js';
+import { getRecentWinners, subscribeToWinners, formatRelativeTime, formatWinAmount } from '../../services/winnersService.js';
 import { submitDreamTeam } from '../../contracts/gameContract.js';
 import { formatCurrency, formatPercentage, getPriceChangeClass } from '../../utils/formatters.js';
 import { MULTIPLIERS } from '../../utils/constants.js';
@@ -32,7 +33,7 @@ export function createDreamTeam() {
   // Live Competitions Card (Left column)
   const liveCompCard = document.createElement('div');
   liveCompCard.className = 'card';
-  liveCompCard.style.cssText = 'position: relative; padding: var(--spacing-lg);';
+  liveCompCard.style.cssText = 'position: relative; padding: var(--spacing-md) var(--spacing-md) 0 var(--spacing-md);';
 
   // Get initial competition time info
   const compTimeInfo = getCompetitionTimeInfo();
@@ -51,37 +52,18 @@ export function createDreamTeam() {
     </div>
     
     <div style="background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: var(--spacing-md); backdrop-filter: blur(10px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
-      <div style="text-align: center; margin-bottom: var(--spacing-sm);">
-        <div style="font-size: 0.75rem; color: var(--color-text-muted); margin-bottom: 2px;">Reference: UTC 00:00 Opening Price</div>
-        <div style="font-size: 0.75rem; color: var(--color-text-muted);">Competition ends at 23:59 UTC</div>
-      </div>
-      
       <div style="display: flex; justify-content: space-between; margin-bottom: var(--spacing-sm);">
         <div>
           <div style="display: flex; align-items: center; gap: var(--spacing-xs); color: var(--color-text-secondary); font-size: 0.875rem; margin-bottom: 4px;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
-              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
-              <path d="M4 22h16"></path>
-              <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
-              <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
-              <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
-            </svg>
             Prize Pool
           </div>
-          <div style="font-size: 1.5rem; font-weight: 700; color: #09C285;">$25,000</div>
+          <div id="competition-prize-pool" style="font-size: 1.5rem; font-weight: 700; color: #09C285;">$7,615</div>
         </div>
         <div style="text-align: right;">
           <div style="display: flex; align-items: center; justify-content: flex-end; gap: var(--spacing-xs); color: var(--color-text-secondary); font-size: 0.875rem; margin-bottom: 4px;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
             Players
           </div>
-          <div style="font-size: 1.5rem; font-weight: 700;">1,523</div>
+          <div id="competition-players" style="font-size: 1.5rem; font-weight: 700;">1,523</div>
         </div>
       </div>
       
@@ -98,19 +80,23 @@ export function createDreamTeam() {
       </div>
     </div>
     
-    <div style="display: flex; justify-content: center; gap: var(--spacing-sm); margin-top: var(--spacing-sm);">
-      <button class="carousel-btn" id="comp-prev" style="background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M15 18l-6-6 6-6"></path>
-        </svg>
-      </button>
-      <button class="carousel-btn" id="comp-next" style="background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M9 18l6-6-6-6"></path>
-        </svg>
-      </button>
-    </div>
+    <p style="text-align: center; margin: 6px 0 0 0; font-size: 0.6rem; color: var(--color-text-muted); font-weight: 600; font-style: italic; line-height: 1.4;">UTC 00:00 opening price is the reference. Prices from Binance USDT pairs, CoinGecko for unlisted tokens.</p>
   `;
+
+  // Helper to update prize pool based on player count
+  const updatePrizePool = () => {
+    const playersEl = liveCompCard.querySelector('#competition-players');
+    const prizeEl = liveCompCard.querySelector('#competition-prize-pool');
+    if (playersEl && prizeEl) {
+      const playersText = playersEl.textContent.replace(/,/g, '');
+      const playerCount = parseInt(playersText, 10) || 0;
+      const prizePool = playerCount * 5;
+      prizeEl.textContent = `$${prizePool.toLocaleString()}`;
+    }
+  };
+
+  // Initial prize pool calculation
+  updatePrizePool();
 
   // Start timer update interval
   const timerInterval = setInterval(() => {
@@ -119,6 +105,8 @@ export function createDreamTeam() {
       const timeInfo = getCompetitionTimeInfo();
       timerElement.textContent = timeInfo.timeRemainingFormatted;
     }
+    // Update prize pool in case player count changes
+    updatePrizePool();
   }, 1000);
 
   // Join Competition button click handler - scroll to build section with categories
@@ -134,10 +122,24 @@ export function createDreamTeam() {
     };
   }
 
-  // Recent Winners Card (spans 2 columns and 2 rows)
+  // Recent Winners Card
   const winnersCard = document.createElement('div');
   winnersCard.className = 'card';
   winnersCard.style.cssText = 'position: relative; padding: var(--spacing-md);';
+
+  // Function to render winners list
+  const renderWinnersList = (winners) => {
+    return winners.map(winner => `
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; background: rgba(255,255,255,0.05); border-radius: 6px;">
+        <span style="font-size: 0.75rem; font-family: monospace; color: var(--color-text-secondary);">${winner.address}</span>
+        <span style="font-size: 0.7rem; color: var(--color-text-muted);">${winner.gameMode}</span>
+        <span style="font-size: 0.75rem; font-weight: 700; color: #09C285;">${formatWinAmount(winner.amount)}</span>
+      </div>
+    `).join('');
+  };
+
+  // Initial render
+  const initialWinners = getRecentWinners(8);
   winnersCard.innerHTML = `
     <div style="display: flex; justify-content: center; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-sm);">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#09C285" stroke-width="2">
@@ -145,152 +147,45 @@ export function createDreamTeam() {
         <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"></path>
       </svg>
       <h3 style="margin: 0; font-size: 1.125rem; font-weight: 600;">Recent Winners</h3>
+      <div style="display: flex; align-items: center; gap: 4px; margin-left: 6px;">
+        <span style="width: 6px; height: 6px; background: #09C285; border-radius: 50%; animation: livePulse 1.5s ease-in-out infinite;"></span>
+        <span style="font-size: 0.6rem; font-weight: 700; color: #09C285; text-transform: uppercase; letter-spacing: 0.5px;">Live</span>
+      </div>
     </div>
     
-    <div style="background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: var(--spacing-sm); backdrop-filter: blur(10px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); max-height: 250px; overflow-y: auto;">
-      <div style="display: flex; flex-direction: column; gap: var(--spacing-xs);">
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs); background: rgba(255,255,255,0.05); border-radius: 6px;">
-          <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
-            <div style="width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: white;">1</div>
-            <div>
-              <div style="font-size: 0.8rem; font-weight: 600;">0x7a9f...3b2c</div>
-              <div style="font-size: 0.65rem; color: var(--color-text-muted);">Weekend Warriors</div>
-            </div>
-          </div>
-          <div style="text-align: right;">
-            <div style="font-size: 0.8rem; font-weight: 700; color: #09C285;">$25,000</div>
-            <div style="font-size: 0.65rem; color: var(--color-text-muted);">2h ago</div>
-          </div>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs); background: rgba(255,255,255,0.05); border-radius: 6px;">
-          <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
-            <div style="width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #C0C0C0 0%, #A8A8A8 100%); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: white;">2</div>
-            <div>
-              <div style="font-size: 0.8rem; font-weight: 600;">0x4e1d...8f9a</div>
-              <div style="font-size: 0.65rem; color: var(--color-text-muted);">Crypto Sprint</div>
-            </div>
-          </div>
-          <div style="text-align: right;">
-            <div style="font-size: 0.8rem; font-weight: 700; color: #09C285;">$10,000</div>
-            <div style="font-size: 0.65rem; color: var(--color-text-muted);">5h ago</div>
-          </div>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs); background: rgba(255,255,255,0.05); border-radius: 6px;">
-          <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
-            <div style="width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #CD7F32 0%, #B87333 100%); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: white;">3</div>
-            <div>
-              <div style="font-size: 0.8rem; font-weight: 600;">0x9c2b...5d7e</div>
-              <div style="font-size: 0.65rem; color: var(--color-text-muted);">Daily Duel</div>
-            </div>
-          </div>
-          <div style="text-align: right;">
-            <div style="font-size: 0.8rem; font-weight: 700; color: #09C285;">$5,000</div>
-            <div style="font-size: 0.65rem; color: var(--color-text-muted);">8h ago</div>
-          </div>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs); background: rgba(255,255,255,0.05); border-radius: 6px;">
-          <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
-            <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--glass-border); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: var(--color-text-primary);">4</div>
-            <div>
-              <div style="font-size: 0.8rem; font-weight: 600;">0x3f8a...2c1d</div>
-              <div style="font-size: 0.65rem; color: var(--color-text-muted);">Bull Run</div>
-            </div>
-          </div>
-          <div style="text-align: right;">
-            <div style="font-size: 0.8rem; font-weight: 700; color: #09C285;">$2,500</div>
-            <div style="font-size: 0.65rem; color: var(--color-text-muted);">12h ago</div>
-          </div>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs); background: rgba(255,255,255,0.05); border-radius: 6px;">
-          <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
-            <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--glass-border); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: var(--color-text-primary);">5</div>
-            <div>
-              <div style="font-size: 0.8rem; font-weight: 600;">0x1b5e...7a4f</div>
-              <div style="font-size: 0.65rem; color: var(--color-text-muted);">Moon Shot</div>
-            </div>
-          </div>
-          <div style="text-align: right;">
-            <div style="font-size: 0.8rem; font-weight: 700; color: #09C285;">$1,000</div>
-            <div style="font-size: 0.65rem; color: var(--color-text-muted);">18h ago</div>
-          </div>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs); background: rgba(255,255,255,0.05); border-radius: 6px;">
-          <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
-            <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--glass-border); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: var(--color-text-primary);">6</div>
-            <div>
-              <div style="font-size: 0.8rem; font-weight: 600;">0x8d2c...4e7b</div>
-              <div style="font-size: 0.65rem; color: var(--color-text-muted);">Diamond Hands</div>
-            </div>
-          </div>
-          <div style="text-align: right;">
-            <div style="font-size: 0.8rem; font-weight: 700; color: #09C285;">$750</div>
-            <div style="font-size: 0.65rem; color: var(--color-text-muted);">20h ago</div>
-          </div>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs); background: rgba(255,255,255,0.05); border-radius: 6px;">
-          <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
-            <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--glass-border); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: var(--color-text-primary);">7</div>
-            <div>
-              <div style="font-size: 0.8rem; font-weight: 600;">0x2f9a...1c3d</div>
-              <div style="font-size: 0.65rem; color: var(--color-text-muted);">Altcoin Arena</div>
-            </div>
-          </div>
-          <div style="text-align: right;">
-            <div style="font-size: 0.8rem; font-weight: 700; color: #09C285;">$500</div>
-            <div style="font-size: 0.65rem; color: var(--color-text-muted);">21h ago</div>
-          </div>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs); background: rgba(255,255,255,0.05); border-radius: 6px;">
-          <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
-            <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--glass-border); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: var(--color-text-primary);">8</div>
-            <div>
-              <div style="font-size: 0.8rem; font-weight: 600;">0x5e7f...9a2b</div>
-              <div style="font-size: 0.65rem; color: var(--color-text-muted);">Token Titans</div>
-            </div>
-          </div>
-          <div style="text-align: right;">
-            <div style="font-size: 0.8rem; font-weight: 700; color: #09C285;">$400</div>
-            <div style="font-size: 0.65rem; color: var(--color-text-muted);">22h ago</div>
-          </div>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs); background: rgba(255,255,255,0.05); border-radius: 6px;">
-          <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
-            <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--glass-border); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: var(--color-text-primary);">9</div>
-            <div>
-              <div style="font-size: 0.8rem; font-weight: 600;">0x6a3b...8d4c</div>
-              <div style="font-size: 0.65rem; color: var(--color-text-muted);">Pump Masters</div>
-            </div>
-          </div>
-          <div style="text-align: right;">
-            <div style="font-size: 0.8rem; font-weight: 700; color: #09C285;">$300</div>
-            <div style="font-size: 0.65rem; color: var(--color-text-muted);">23h ago</div>
-          </div>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs); background: rgba(255,255,255,0.05); border-radius: 6px;">
-          <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
-            <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--glass-border); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: var(--color-text-primary);">10</div>
-            <div>
-              <div style="font-size: 0.8rem; font-weight: 600;">0x4c8d...2f5e</div>
-              <div style="font-size: 0.65rem; color: var(--color-text-muted);">Whale Watch</div>
-            </div>
-          </div>
-          <div style="text-align: right;">
-            <div style="font-size: 0.8rem; font-weight: 700; color: #09C285;">$200</div>
-            <div style="font-size: 0.65rem; color: var(--color-text-muted);">24h ago</div>
-          </div>
-        </div>
+    <div style="background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: var(--spacing-sm); backdrop-filter: blur(10px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); max-height: 220px; overflow-y: auto;">
+      <div id="winners-list" style="display: flex; flex-direction: column; gap: 6px;">
+        ${renderWinnersList(initialWinners)}
       </div>
     </div>
   `;
+
+  // Add live pulse animation
+  const pulseStyle = document.createElement('style');
+  pulseStyle.textContent = `
+    @keyframes livePulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+    @keyframes winnerSlideIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  `;
+  document.head.appendChild(pulseStyle);
+
+  // Subscribe to winner updates
+  const unsubscribeWinners = subscribeToWinners((winners) => {
+    const winnersList = winnersCard.querySelector('#winners-list');
+    if (winnersList) {
+      winnersList.innerHTML = renderWinnersList(winners.slice(0, 8));
+      // Add animation to first item (newest)
+      const firstItem = winnersList.firstElementChild;
+      if (firstItem) {
+        firstItem.style.animation = 'winnerSlideIn 0.3s ease-out';
+      }
+    }
+  });
 
   // User Teams Card (Right column)
   const userTeamsCard = document.createElement('div');
@@ -307,47 +202,47 @@ export function createDreamTeam() {
       <h3 style="margin: 0; font-size: 1.125rem; font-weight: 600;">My Teams</h3>
     </div>
     
-    <div style="background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: var(--spacing-sm); backdrop-filter: blur(10px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); max-height: 280px; overflow-y: auto;">
-      <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
-        <div style="padding: var(--spacing-sm); background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 3px solid #09C285;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xs);">
-            <div style="font-size: 0.85rem; font-weight: 600;">Team Alpha</div>
-            <span class="badge badge-success" style="font-size: 0.65rem; padding: 0.15rem 0.4rem;">Active</span>
-          </div>
-          <div style="font-size: 0.7rem; color: var(--color-text-muted); margin-bottom: var(--spacing-xs);">15 tokens • Weekend Warriors</div>
-          <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-            <div style="width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #627EEA 0%, #4E5ECD 100%); border: 2px solid var(--color-bg-primary);"></div>
-            <div style="width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #F7931A 0%, #E07A0A 100%); border: 2px solid var(--color-bg-primary);"></div>
-            <div style="width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #8247E5 0%, #6B3CC7 100%); border: 2px solid var(--color-bg-primary);"></div>
-            <div style="width: 20px; height: 20px; border-radius: 50%; background: var(--glass-bg); border: 2px solid var(--color-bg-primary); display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: var(--color-text-muted);">+12</div>
-          </div>
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <!-- Active Team -->
+      <div style="background: linear-gradient(135deg, rgba(9, 194, 133, 0.1) 0%, rgba(9, 194, 133, 0.05) 100%); border: 1px solid rgba(9, 194, 133, 0.3); border-radius: 8px; padding: 10px; position: relative;">
+        <div style="position: absolute; top: 0; right: 0; background: #09C285; color: white; font-size: 0.5rem; font-weight: 700; padding: 2px 6px; border-radius: 0 8px 0 6px; text-transform: uppercase;">Active</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <div style="font-size: 0.85rem; font-weight: 600;">Team #1</div>
+          <div style="font-size: 0.6rem; color: var(--color-text-muted);">Daily Competition</div>
         </div>
-        
-        <div style="padding: var(--spacing-sm); background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 3px solid var(--color-text-muted); opacity: 0.8;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xs);">
-            <div style="font-size: 0.85rem; font-weight: 600;">Team Beta</div>
-            <span class="badge" style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: var(--glass-bg);">Ended</span>
-          </div>
-          <div style="font-size: 0.7rem; color: var(--color-text-muted); margin-bottom: var(--spacing-xs);">15 tokens • Crypto Sprint</div>
-          <div style="font-size: 0.75rem; color: #09C285; font-weight: 600;">Rank: #42 • +$250</div>
+        <div style="display: flex; margin-left: 0;">
+          <div style="width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #F7931A 0%, #E07A0A 100%); border: 2px solid var(--color-bg-primary); z-index: 4;"></div>
+          <div style="width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #627EEA 0%, #4E5ECD 100%); border: 2px solid var(--color-bg-primary); margin-left: -6px; z-index: 3;"></div>
+          <div style="width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #8247E5 0%, #6B3CC7 100%); border: 2px solid var(--color-bg-primary); margin-left: -6px; z-index: 2;"></div>
+          <div style="width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #E84142 0%, #C72C2C 100%); border: 2px solid var(--color-bg-primary); margin-left: -6px; z-index: 1;"></div>
+          <div style="width: 20px; height: 20px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 2px solid var(--color-bg-primary); margin-left: -6px; display: flex; align-items: center; justify-content: center; font-size: 0.5rem; color: var(--color-text-muted);">+11</div>
         </div>
-        
-        <div style="padding: var(--spacing-sm); background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 3px solid var(--color-text-muted); opacity: 0.8;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xs);">
-            <div style="font-size: 0.85rem; font-weight: 600;">Team Gamma</div>
-            <span class="badge" style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: var(--glass-bg);">Ended</span>
-          </div>
-          <div style="font-size: 0.7rem; color: var(--color-text-muted); margin-bottom: var(--spacing-xs);">15 tokens • Daily Duel</div>
-          <div style="font-size: 0.75rem; color: #09C285; font-weight: 600;">Rank: #15 • +$500</div>
+      </div>
+      
+      <!-- Completed Team #2 -->
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 8px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-size: 0.8rem; font-weight: 600;">Team #2</div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="font-size: 0.65rem; color: var(--color-text-muted);">Rank #42</div>
+          <div style="font-size: 0.7rem; color: #09C285; font-weight: 600;">+$250</div>
         </div>
-        
-        <div style="padding: var(--spacing-sm); background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 3px solid var(--color-text-muted); opacity: 0.8;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xs);">
-            <div style="font-size: 0.85rem; font-weight: 600;">Team Delta</div>
-            <span class="badge" style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: var(--glass-bg);">Ended</span>
-          </div>
-          <div style="font-size: 0.7rem; color: var(--color-text-muted); margin-bottom: var(--spacing-xs);">15 tokens • Moon Shot</div>
-          <div style="font-size: 0.75rem; color: #09C285; font-weight: 600;">Rank: #8 • +$1,200</div>
+      </div>
+      
+      <!-- Completed Team #3 -->
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 8px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-size: 0.8rem; font-weight: 600;">Team #3</div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="font-size: 0.65rem; color: var(--color-text-muted);">Rank #15</div>
+          <div style="font-size: 0.7rem; color: #09C285; font-weight: 600;">+$500</div>
+        </div>
+      </div>
+      
+      <!-- Completed Team #4 -->
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 8px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-size: 0.8rem; font-weight: 600;">Team #4</div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="font-size: 0.65rem; color: var(--color-text-muted);">Rank #8</div>
+          <div style="font-size: 0.7rem; color: #09C285; font-weight: 600;">+$1,200</div>
         </div>
       </div>
     </div>
@@ -363,6 +258,8 @@ export function createDreamTeam() {
   header.style.cssText = `
     text-align: center;
     margin-bottom: var(--spacing-md);
+    position: relative;
+    z-index: 10;
   `;
   header.innerHTML = `
     <div style="display: flex; align-items: center; justify-content: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-xs);">
@@ -382,7 +279,7 @@ export function createDreamTeam() {
       </svg>
       <h1 style="font-size: 2rem; margin: 0;">Dream Team</h1>
     </div>
-    <p style="color: var(--color-text-secondary); font-size: 1rem; margin: 0;">Build your ultimate crypto portfolio of 15 tokens</p>
+    <p style="color: var(--color-text-secondary); font-size: 1rem; margin: 0;">Build your ultimate crypto portfolio of 12 tokens</p>
   `;
   container.appendChild(header);
 
@@ -395,8 +292,9 @@ export function createDreamTeam() {
     justify-content: space-between;
     margin-bottom: var(--spacing-lg);
     gap: var(--spacing-md);
-    flex-wrap: wrap;
     scroll-margin-top: 80px;
+    position: relative;
+    z-index: 10;
   `;
 
   // Left section - Category filters
@@ -445,7 +343,7 @@ export function createDreamTeam() {
     display: none;
     white-space: nowrap;
   `;
-  selectionBadge.innerHTML = `<span id="selected-count">0</span>/15`;
+  selectionBadge.innerHTML = `<span id="selected-count">0</span>/12`;
 
   rightSection.appendChild(searchBar);
   rightSection.appendChild(selectionBadge);
@@ -465,7 +363,7 @@ export function createDreamTeam() {
   tokenGridWrapper.appendChild(tokenGrid);
   container.appendChild(tokenGridWrapper);
 
-  // Bottom Action Bar (shown only when 15 tokens selected)
+  // Bottom Action Bar (shown only when 12 tokens selected)
   const actionBar = document.createElement('div');
   actionBar.id = 'action-bar';
   actionBar.style.cssText = `
@@ -557,10 +455,14 @@ export function createDreamTeam() {
 // Initialize from global state (preserves team when navigating away and back)
 let selectedTeam = getSelectedTeam();
 
+// Global reference prices (UTC 00:00 opening prices) - used in captain modal
+let referencePrices = {};
+
 // Sync local team to global state whenever it changes
 function syncToGlobalState() {
   setSelectedTeam(selectedTeam);
 }
+
 async function loadTokens(gridContainer) {
   gridContainer.innerHTML = '<div class="loading" style="grid-column: 1 / -1; text-align: center; padding: var(--spacing-2xl);"></div>';
 
@@ -569,14 +471,22 @@ async function loadTokens(gridContainer) {
     const tokens = await fetchTopTokens(250);
     renderTokens(tokens, gridContainer);
 
+    // Pre-fetch opening prices in the background (once per day)
+    if (!hasValidPriceCache()) {
+      console.log('Pre-fetching opening prices for Dream Team...');
+      getUTCOpeningPrices(tokens).then(() => {
+        console.log('Opening prices pre-fetched and cached');
+      }).catch(err => console.error('Failed to pre-fetch prices:', err));
+    }
+
     // Refresh local team from global state (in case we navigated back)
     selectedTeam = getSelectedTeam();
 
-    // Update UI to reflect current selection state (shows action bar if 15 selected)
+    // Update UI to reflect current selection state (shows action bar if 12 selected)
     updateUI();
 
     // Check if we should auto-open modal (redirected from widget)
-    if (getShouldOpenModal() && selectedTeam.length === 15) {
+    if (getShouldOpenModal() && selectedTeam.length === 12) {
       setTimeout(() => openCaptainModal(), 500);
     }
   } catch (error) {
@@ -688,16 +598,12 @@ function createTokenCard(token) {
     else card.classList.add('selected');
   }
 
-  // Hide coin name if longer than 8 characters
-  const showName = token.name.length <= 8;
-
   // 💡 FIXED WIDTH FOR PRICE COLUMN: 90px ensures consistent right alignment
   card.innerHTML = `
     <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
       <img src="${token.image}" alt="${token.name}" class="lifted-element" style="width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;" />
       <div style="width: 55px; flex-shrink: 0;">
-        <div class="lifted-element" style="font-weight: 700; font-size: 1rem; ${showName ? 'margin-bottom: 2px;' : ''}">${token.symbol.toUpperCase()}</div>
-        ${showName ? `<div style="font-size: 0.75rem; color: var(--color-text-muted);">${token.name}</div>` : ''}
+        <div class="lifted-element" style="font-weight: 700; font-size: 1rem;">${token.symbol.toUpperCase()}</div>
       </div>
       <!-- ✅ FIXED-WIDTH RIGHT COLUMN -->
       <div style="width: 90px; text-align: right; flex-shrink: 0;">
@@ -818,8 +724,8 @@ function toggleTokenSelection(token, card, direction) {
     }
   } else {
     // Add to selection
-    if (selectedTeam.length >= 15) {
-      alert('You can only select up to 15 tokens!');
+    if (selectedTeam.length >= 12) {
+      alert('You can only select up to 12 tokens!');
       return;
     }
 
@@ -986,12 +892,20 @@ function updateUI() {
       headerEl.style.cssText = `
         text-align: center;
         margin-bottom: var(--spacing-md);
+        position: relative;
+        z-index: 10;
       `;
-      const titleDiv = headerEl.querySelector('div[style*="flex-start"], div[style*="justify-content"]');
+      // Find and restore title div
+      const titleDiv = headerEl.querySelector('div');
       const tagline = headerEl.querySelector('p');
       if (titleDiv) {
-        titleDiv.style.justifyContent = 'center';
-        titleDiv.style.marginBottom = 'var(--spacing-xs)';
+        titleDiv.style.cssText = `
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: var(--spacing-sm);
+          margin-bottom: var(--spacing-xs);
+        `;
         const h1 = titleDiv.querySelector('h1');
         if (h1) h1.style.fontSize = '2rem';
         const svg = titleDiv.querySelector('svg');
@@ -1000,9 +914,12 @@ function updateUI() {
           svg.setAttribute('height', '36');
         }
       }
-      if (tagline) tagline.style.display = 'block';
+      if (tagline) {
+        tagline.style.display = 'block';
+        tagline.style.cssText = 'color: var(--color-text-secondary); font-size: 1rem; margin: 0;';
+      }
 
-      // Remove compact elements and show original controls
+      // Remove compact elements
       const compactCategories = headerEl.querySelector('#compact-categories');
       const compactRight = headerEl.querySelector('#compact-right');
       if (compactCategories) compactCategories.remove();
@@ -1010,11 +927,22 @@ function updateUI() {
     }
     if (controlsRow) {
       controlsRow.style.display = 'flex';
+      controlsRow.style.cssText = `
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--spacing-lg);
+        gap: var(--spacing-md);
+        scroll-margin-top: 80px;
+        position: relative;
+        z-index: 10;
+      `;
     }
 
     // Show info cards with grid layout
     if (infoCards) {
       infoCards.style.display = 'grid';
+      infoCards.style.gridTemplateColumns = '1fr 1fr 1fr';
     }
     // Revert grid to responsive auto-fill
     if (tokenGrid) {
@@ -1127,7 +1055,7 @@ function updateUI() {
         searchInput.style.width = '180px';
       }
 
-      if (selectedTeam.length === 15) {
+      if (selectedTeam.length === 12) {
         badge.className = 'badge badge-success';
         badge.style.background = 'var(--color-primary)';
         badge.style.color = 'white';
@@ -1156,10 +1084,10 @@ function updateUI() {
     }
   }
 
-  // Show/hide bottom action bar (only when 15 tokens selected)
+  // Show/hide bottom action bar (only when 12 tokens selected)
   const actionBar = document.getElementById('action-bar');
   if (actionBar) {
-    if (selectedTeam.length === 15) {
+    if (selectedTeam.length === 12) {
       actionBar.style.display = 'flex';
       // Trigger confetti animation
       if (!actionBar.dataset.confettiShown) {
@@ -1183,7 +1111,7 @@ function updateUI() {
   syncToGlobalState();
 }
 
-function openCaptainModal() {
+async function openCaptainModal() {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.style.animation = 'fadeIn 0.2s ease-out';
@@ -1192,13 +1120,39 @@ function openCaptainModal() {
 
   const modal = document.createElement('div');
   modal.className = 'modal';
-  modal.style.maxWidth = '600px';
+  modal.style.maxWidth = '650px';
   modal.style.boxShadow = '0 20px 60px rgba(0, 0, 0, 0.3)';
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  // Use cached prices if available, otherwise fetch
+  let referencePrices = getCachedOpeningPrices();
+
+  if (Object.keys(referencePrices).length === 0) {
+    // Show loading state only if we need to fetch
+    modal.innerHTML = `
+      <div style="padding: 40px; text-align: center;">
+        <div class="loading"></div>
+        <p style="color: #666; margin-top: 16px;">Fetching reference prices...</p>
+      </div>
+    `;
+
+    try {
+      referencePrices = await getUTCOpeningPrices(selectedTeam);
+      console.log('Reference prices loaded:', Object.keys(referencePrices).length);
+    } catch (error) {
+      console.error('Error fetching reference prices:', error);
+    }
+  } else {
+    console.log('Using cached reference prices');
+  }
 
   function renderModalContent() {
     modal.innerHTML = `
         <button class="modal-close">×</button>
         <h2 class="modal-title" style="color: #000;">Select Team Leaders</h2>
+        <p style="color: #666; font-size: 0.7rem; margin: -8px 0 12px; text-align: center; line-height: 1.4;">UTC 00:00 opening price is the reference. Prices from Binance USDT pairs, CoinGecko for unlisted tokens.</p>
         
         <div class="modal-body" style="display: flex; flex-direction: column; gap: var(--spacing-md); height: 100%;">
           
@@ -1351,6 +1305,11 @@ function openCaptainModal() {
       ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 12 5 19 12"></polyline></svg>`
       : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="19 12 12 19 5 12"></polyline></svg>`;
 
+    // Get reference price for this token
+    const refPriceData = referencePrices[token.symbol.toUpperCase()];
+    const refPrice = refPriceData?.openPrice;
+    const refPriceFormatted = refPrice ? formatCurrency(refPrice) : '--';
+
     // Inner HTML
     card.innerHTML = `
         <div style="position: relative;">
@@ -1362,6 +1321,7 @@ function openCaptainModal() {
         </div>
         <div style="flex: 1; min-width: 0;">
           <div style="font-weight: 600; font-size: ${isLeader ? '1rem' : '0.8rem'}; line-height: 1.2; color: #000;">${token.symbol.toUpperCase()}</div>
+          <div style="font-size: ${isLeader ? '0.75rem' : '0.65rem'}; color: #666; margin-top: 2px;">${refPriceFormatted}</div>
         </div>
         
         ${type === 'ROSTER' ? `
@@ -1436,7 +1396,7 @@ function openCaptainModal() {
     // Explicit solid colors with importance to override component styles
     btn.style.cssText += 'background: #09C285 !important; color: white !important; border: none !important; opacity: 1;';
 
-    btn.textContent = 'Submit Team';
+    btn.textContent = 'Submit Team (5 USDC)';
 
     modalBody.appendChild(btn);
 
@@ -1448,7 +1408,8 @@ function openCaptainModal() {
       }
 
       btn.disabled = true;
-      btn.innerHTML = '<div class="loading"></div>';
+      btn.innerHTML = '<div class="loading"></div> Processing...';
+      btn.style.cssText += 'display: flex; align-items: center; justify-content: center; gap: 8px;';
 
       try {
         // Send full token objects including direction
@@ -1462,24 +1423,30 @@ function openCaptainModal() {
         });
 
         overlay.remove();
-        alert(`✅ ${result.message}\n\nTeam ID: ${result.teamId}\nTransaction: ${result.txHash.slice(0, 10)}...`);
+        alert(`✅ ${result.message}\n\nTeam ID: ${result.teamId}\nEntry Fee: ${result.entryFee} USDC\nTransaction: ${result.txHash.slice(0, 10)}...`);
 
         // Reset team
         selectedTeam = [];
         updateUI();
       } catch (error) {
         btn.disabled = false;
-        btn.textContent = 'Submit Team';
-        alert(`❌ Error: ${error.message}`);
+        btn.textContent = 'Submit Team (5 USDC)';
+
+        // Better error messages
+        let errorMsg = error.message;
+        if (error.message.includes('User denied') || error.message.includes('rejected')) {
+          errorMsg = 'Transaction was cancelled';
+        }
+        alert(`❌ Error: ${errorMsg}`);
       }
     });
   }
 
-  modal.querySelector('.modal-close').addEventListener('click', () => overlay.remove());
+  // Render the actual modal content now that we have prices
+  renderModalContent();
+
+  // Click outside to close
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) overlay.remove();
   });
-
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
 }

@@ -104,16 +104,50 @@ export async function fetchHistoricalPrices(tokenId, days = 7) {
     }
 }
 
+// Map symbol to CoinGecko ID for fallback
+const SYMBOL_TO_COINGECKO_ID = {
+    'BTC': 'bitcoin',
+    'ETH': 'ethereum',
+    'BNB': 'binancecoin',
+    'XRP': 'ripple',
+    'ADA': 'cardano',
+    'SOL': 'solana',
+    'DOGE': 'dogecoin',
+    'DOT': 'polkadot',
+    'MATIC': 'matic-network',
+    'SHIB': 'shiba-inu',
+    'LTC': 'litecoin',
+    'TRX': 'tron',
+    'AVAX': 'avalanche-2',
+    'LINK': 'chainlink',
+    'ATOM': 'cosmos',
+    'UNI': 'uniswap',
+    'XLM': 'stellar',
+    'NEAR': 'near',
+    'APT': 'aptos',
+    'ARB': 'arbitrum',
+    'OP': 'optimism',
+    'FIL': 'filecoin',
+    'AAVE': 'aave',
+    'CRV': 'curve-dao-token',
+    // Add more mappings as needed
+};
+
 /**
- * Get the UTC 00:00 opening price for a token (for daily competitions)
- * @param {string} tokenId - CoinGecko token ID
- * @returns {Promise<Object>} Object with opening price and timestamp
+ * Get opening price from CoinGecko OHLC (fallback)
+ * @param {string} symbol - Token symbol
+ * @returns {Promise<Object|null>} Opening price data or null
  */
-export async function getUTCOpeningPrice(tokenId) {
+async function getOpeningPriceFromCoinGecko(symbol) {
+    const coinId = SYMBOL_TO_COINGECKO_ID[symbol.toUpperCase()];
+    if (!coinId) {
+        console.warn(`No CoinGecko mapping for ${symbol}`);
+        return null;
+    }
+
     try {
-        // Fetch OHLC data for the last 1 day to get today's opening price
         const response = await fetch(
-            `https://api.coingecko.com/api/v3/coins/${tokenId}/ohlc?vs_currency=usd&days=1`
+            `https://api.coingecko.com/api/v3/coins/${coinId}/ohlc?vs_currency=usd&days=1`
         );
 
         if (!response.ok) {
@@ -129,42 +163,162 @@ export async function getUTCOpeningPrice(tokenId) {
             return {
                 timestamp: firstCandle[0],
                 openPrice: firstCandle[1],
+                highPrice: firstCandle[2],
+                lowPrice: firstCandle[3],
+                currentPrice: firstCandle[4],
                 date: new Date(firstCandle[0]),
+                symbol: symbol.toUpperCase(),
+                source: 'coingecko',
             };
         }
 
-        throw new Error('No OHLC data available');
+        return null;
     } catch (error) {
-        console.error('Error fetching UTC opening price:', error);
-        throw error;
+        console.error(`CoinGecko fallback failed for ${symbol}:`, error.message);
+        return null;
     }
 }
 
 /**
- * Get UTC 00:00 opening prices for multiple tokens
- * @param {Array<string>} tokenIds - Array of CoinGecko token IDs
- * @returns {Promise<Object>} Object with token IDs as keys and opening prices as values
+ * Get the UTC 00:00 opening price for a token from Binance (for daily competitions)
+ * Falls back to CoinGecko OHLC if Binance doesn't have the pair
+ * @param {string} symbol - Token symbol (e.g., 'BTC', 'ETH')
+ * @returns {Promise<Object>} Object with opening price and timestamp
  */
-export async function getUTCOpeningPrices(tokenIds) {
+export async function getUTCOpeningPrice(symbol) {
+    // Try Binance first
     try {
-        const prices = {};
+        const binanceSymbol = `${symbol.toUpperCase()}USDT`;
 
-        // Fetch opening price for each token
-        // Note: This makes multiple API calls, consider rate limiting in production
-        for (const tokenId of tokenIds) {
-            try {
-                const data = await getUTCOpeningPrice(tokenId);
-                prices[tokenId] = data;
-            } catch (error) {
-                console.warn(`Could not fetch opening price for ${tokenId}:`, error.message);
-                prices[tokenId] = null;
+        // Get today's UTC 00:00 timestamp
+        const now = new Date();
+        const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
+        const startTime = todayUTC.getTime();
+
+        // Fetch the daily kline from Binance
+        const response = await fetch(
+            `https://api.binance.com/api/v3/klines?symbol=${binanceSymbol}&interval=1d&startTime=${startTime}&limit=1`
+        );
+
+        if (response.ok) {
+            const data = await response.json();
+
+            if (data && data.length > 0) {
+                // Kline format: [openTime, open, high, low, close, volume, closeTime, ...]
+                const kline = data[0];
+                return {
+                    timestamp: kline[0],
+                    openPrice: parseFloat(kline[1]),
+                    highPrice: parseFloat(kline[2]),
+                    lowPrice: parseFloat(kline[3]),
+                    currentPrice: parseFloat(kline[4]),
+                    date: new Date(kline[0]),
+                    symbol: symbol.toUpperCase(),
+                    source: 'binance',
+                };
+            }
+        }
+    } catch (error) {
+        console.warn(`Binance failed for ${symbol}, trying CoinGecko...`);
+    }
+
+    // Fallback to CoinGecko
+    const coingeckoData = await getOpeningPriceFromCoinGecko(symbol);
+    if (coingeckoData) {
+        return coingeckoData;
+    }
+
+    console.error(`Could not get opening price for ${symbol} from any source`);
+    return null;
+}
+
+// Cache for opening prices (refreshed daily at UTC 00:00)
+let openingPricesCache = {};
+let cacheDate = null;
+let isFetchingPrices = false;
+
+/**
+ * Get cached UTC 00:00 opening prices without fetching
+ * @returns {Object} Cached prices or empty object
+ */
+export function getCachedOpeningPrices() {
+    const today = new Date().toDateString();
+    if (cacheDate === today) {
+        return openingPricesCache;
+    }
+    return {};
+}
+
+/**
+ * Check if opening prices are already cached for today
+ * @returns {boolean} True if cache is valid
+ */
+export function hasValidPriceCache() {
+    const today = new Date().toDateString();
+    return cacheDate === today && Object.keys(openingPricesCache).length > 0;
+}
+
+/**
+ * Get UTC 00:00 opening prices for multiple tokens from Binance
+ * Caches results for the entire day - only fetches once per day
+ * @param {Array<Object>} tokens - Array of token objects with symbol property
+ * @returns {Promise<Object>} Object with symbols as keys and opening price data as values
+ */
+export async function getUTCOpeningPrices(tokens) {
+    try {
+        const today = new Date().toDateString();
+
+        // Return cache if valid (same day)
+        if (cacheDate === today && Object.keys(openingPricesCache).length > 0) {
+            console.log('Using cached opening prices from today');
+            return openingPricesCache;
+        }
+
+        // If another fetch is in progress, wait for it
+        if (isFetchingPrices) {
+            console.log('Waiting for ongoing price fetch...');
+            await new Promise(r => setTimeout(r, 2000));
+            if (cacheDate === today) {
+                return openingPricesCache;
             }
         }
 
-        return prices;
+        isFetchingPrices = true;
+        console.log('Fetching fresh opening prices from Binance...');
+
+        const prices = {};
+
+        // Fetch opening price for each token (with rate limiting)
+        for (const token of tokens) {
+            const symbol = token.symbol?.toUpperCase() || token;
+            // Skip if already in cache from today
+            if (openingPricesCache[symbol] && cacheDate === today) {
+                prices[symbol] = openingPricesCache[symbol];
+                continue;
+            }
+            try {
+                // Add small delay to avoid rate limiting
+                await new Promise(r => setTimeout(r, 50));
+                const data = await getUTCOpeningPrice(symbol);
+                if (data) {
+                    prices[symbol] = data;
+                }
+            } catch (error) {
+                console.warn(`Could not fetch opening price for ${symbol}:`, error.message);
+            }
+        }
+
+        // Update cache
+        openingPricesCache = { ...openingPricesCache, ...prices };
+        cacheDate = today;
+        isFetchingPrices = false;
+
+        console.log(`Cached ${Object.keys(openingPricesCache).length} opening prices for ${today}`);
+        return openingPricesCache;
     } catch (error) {
+        isFetchingPrices = false;
         console.error('Error fetching UTC opening prices:', error);
-        throw error;
+        return openingPricesCache; // Return whatever we have cached
     }
 }
 

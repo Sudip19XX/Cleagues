@@ -172,8 +172,8 @@ export function createSidebar() {
         </div>
       </div>
       
-      <!-- Footer Section -->
-      <div class="sidebar-footer">
+      <!-- Footer Section - positioned at bottom -->
+      <div class="sidebar-footer" style="position: absolute; bottom: 18px; left: 0; right: 0;">
         <a href="#faqs" class="sidebar-footer-link">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"></circle>
@@ -206,7 +206,7 @@ export function createSidebar() {
         bottom: 0;
         left: 0;
         right: 0;
-        padding: var(--spacing-sm) var(--spacing-md);
+        padding: 6px var(--spacing-md);
         background: rgba(0, 0, 0, 0.2);
         border-top: 1px solid rgba(255,255,255,0.05);
         display: flex;
@@ -214,8 +214,8 @@ export function createSidebar() {
         justify-content: center;
         gap: 6px;
       ">
-        <div style="width: 6px; height: 6px; background: #09C285; border-radius: 50%; animation: pulse 2s infinite;"></div>
-        <span style="font-size: 0.55rem; color: var(--color-text-muted); opacity: 0.7;">Prices & data live from Binance</span>
+        <div style="width: 5px; height: 5px; background: #09C285; border-radius: 50%; animation: pulse 2s infinite;"></div>
+        <span style="font-size: 0.5rem; color: var(--color-text-muted); opacity: 0.7;">Prices & data live from Binance</span>
       </div>
     </div>
   `;

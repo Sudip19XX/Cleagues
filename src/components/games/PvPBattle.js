@@ -2,6 +2,14 @@
 // 1v1 betting where users predict token direction (UP/DOWN)
 // Matchmaking: Platform finds opponents with opposite predictions
 
+// ==========================================
+// 🧪 TEST MODE ENABLED
+// ==========================================
+// For production testing - no real USDC required
+// Bets are simulated, winners get mock rewards
+// ==========================================
+const TEST_MODE = true;
+
 import { formatCurrency, formatPercentage, getPriceChangeClass } from '../../utils/formatters.js';
 import {
   fetchMultipleTickers,
@@ -107,6 +115,23 @@ export function createPvPBattle() {
     <p style="color: var(--color-text-secondary); font-size: 1.1rem; max-width: 500px; margin: 0 auto;">
       Predict <span style="color: #09C285; font-weight: 600;">UP</span> or <span style="color: #EF4444; font-weight: 600;">DOWN</span>. Find an opponent. <strong>Winner takes all!</strong>
     </p>
+    ${TEST_MODE ? `
+    <div style="
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: var(--spacing-md);
+      padding: 8px 20px;
+      background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 165, 0, 0.1) 100%);
+      border: 1px solid rgba(255, 215, 0, 0.4);
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #FFD700;
+    ">
+      🧪 TEST MODE - No real USDC required
+    </div>
+    ` : ''}
   `;
   mainContent.appendChild(header);
 
@@ -688,9 +713,14 @@ async function submitBet(battleDuration = 5, expiryMinutes = 30) {
   }
 
   try {
-    // Simulate network delay and fee deduction
+    // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 800));
-    console.log(`[Mock] Deducting $${betAmount} USDC from wallet...`);
+
+    if (TEST_MODE) {
+      console.log(`🧪 [TEST MODE] Simulating $${betAmount} USDC bet placement...`);
+    } else {
+      console.log(`[Production] Deducting $${betAmount} USDC from wallet...`);
+    }
 
     const bet = {
       id: Date.now().toString(),
@@ -769,47 +799,16 @@ async function submitBet(battleDuration = 5, expiryMinutes = 30) {
 }
 
 function loadOpenBets() {
-  // Simulate some existing open bets from "other users"
-  const mockBets = [
-    {
-      id: '1',
-      symbol: 'BTC',
-      name: 'Bitcoin',
-      image: TOKEN_META.BTC.image,
-      direction: 'up',
-      amount: 5,
-      startPrice: 0,
-      timestamp: Date.now() - 120000,
-      user: '0x1a2b...3c4d',
-      status: 'open',
-    },
-    {
-      id: '2',
-      symbol: 'ETH',
-      name: 'Ethereum',
-      image: TOKEN_META.ETH.image,
-      direction: 'down',
-      amount: 10,
-      startPrice: 0,
-      timestamp: Date.now() - 60000,
-      user: '0x5e6f...7g8h',
-      status: 'open',
-    },
-    {
-      id: '3',
-      symbol: 'SOL',
-      name: 'Solana',
-      image: TOKEN_META.SOL.image,
-      direction: 'up',
-      amount: 5,
-      startPrice: 0,
-      timestamp: Date.now() - 30000,
-      user: '0x9i0j...1k2l',
-      status: 'open',
-    },
-  ];
+  // Production Test Mode: Start with empty bets - real users will create them
+  // Each user's bets will be visible to other users in the radar
+  if (TEST_MODE) {
+    console.log('🧪 [TEST MODE] Starting with empty bet radar - waiting for real users to place bets');
+  }
 
-  openBets = mockBets;
+  // In production, this would fetch from backend/blockchain
+  // For now, openBets is shared in-memory (works for same-browser testing)
+  // For multi-user testing across browsers, you'd need a backend
+  openBets = [];
   renderOpenBets();
 }
 
@@ -1298,6 +1297,11 @@ async function openBettingModal(token) {
   // Fetch balance asynchronously
   walletManager.getUSDCBalance().then(b => {
     userBalance = parseFloat(b);
+    // Update modal balance display
+    const balanceEl = modal.querySelector('#modal-balance-display');
+    if (balanceEl) {
+      balanceEl.textContent = `Bal: $${b}`;
+    }
     updateStyles();
   }).catch(e => console.error(e));
 
@@ -1348,7 +1352,10 @@ async function openBettingModal(token) {
     </div>
     
     <div style="width: 100%;">
-      <div style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 12px;">Bet Amount (USDC)</div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <span style="font-size: 0.85rem; color: var(--color-text-muted);">Bet Amount (USDC)</span>
+        <span id="modal-balance-display" style="font-size: 0.85rem; font-weight: 600; color: #FFD700;">🧪 Test Mode</span>
+      </div>
       <style>
         /* Hide native spin buttons */
         #bet-amount-input::-webkit-outer-spin-button,
@@ -1449,7 +1456,7 @@ async function openBettingModal(token) {
       submitBtn.style.cursor = 'not-allowed';
       submitBtn.textContent = 'Min Bet is $5';
       submitBtn.style.background = '#374151'; // Grey
-    } else if (modalAmount > userBalance) {
+    } else if (!TEST_MODE && modalAmount > userBalance) {
       submitBtn.disabled = true;
       submitBtn.style.opacity = '0.5';
       submitBtn.style.cursor = 'not-allowed';
@@ -1592,7 +1599,11 @@ async function processAcceptBet(betId, matchAmount) {
   if (!bet || bet.status !== 'open') return;
 
   // Get current price
-  console.log(`[Mock] Deducting $${matchAmount} USDC from acceptor...`);
+  if (TEST_MODE) {
+    console.log(`🧪 [TEST MODE] Simulating bet acceptance for $${matchAmount} USDC...`);
+  } else {
+    console.log(`[Production] Deducting $${matchAmount} USDC from acceptor...`);
+  }
   try {
     const tickers = await fetchMultipleTickers([bet.symbol]);
     const currentPrice = tickers[0]?.price || bet.startPrice;

@@ -38,6 +38,26 @@ class WalletManager {
         };
     }
 
+    // Switch Network (EVM)
+    async switchNetwork(chainId) {
+        if (!window.ethereum) return false;
+        try {
+            await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: `0x${chainId.toString(16)}` }],
+            });
+            return true;
+        } catch (switchError) {
+            // This error code indicates that the chain has not been added to MetaMask.
+            if (switchError.code === 4902) {
+                // We could add the chain here, but for now we'll just handle the switch failure
+                console.warn('Chain not added to wallet');
+            }
+            console.error('Failed to switch network:', switchError);
+            return false;
+        }
+    }
+
     // Connect to EVM wallet (MetaMask, etc.)
     async connectEVM() {
         try {
@@ -58,6 +78,27 @@ class WalletManager {
             this.address = accounts[0];
             this.provider = window.ethereum;
 
+            // Get Chain ID
+            const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
+            this.chainId = parseInt(chainIdHex, 16);
+
+            // Check if supported (Base, Polygon, or Base Sepolia)
+            // Polygon: 137, Base: 8453, Base Sepolia: 84532
+            const supportedChains = [137, 8453, 84532];
+            if (!supportedChains.includes(this.chainId)) {
+                // Prompt switch based on environment
+                // Development: Base Sepolia (84532)
+                // Production: Base Mainnet (8453)
+                const isDev = import.meta.env.DEV;
+                const targetChain = isDev ? 84532 : 8453;
+                const switched = await this.switchNetwork(targetChain);
+                if (switched) {
+                    this.chainId = targetChain;
+                } else {
+                    // Fallback logic
+                }
+            }
+
             // Set up event listeners
             this.setupEVMListeners();
 
@@ -70,6 +111,7 @@ class WalletManager {
                 success: true,
                 address: this.address,
                 chain: this.currentChain,
+                chainId: this.chainId
             };
         } catch (error) {
             console.error('Error connecting to EVM wallet:', error);
@@ -118,6 +160,7 @@ class WalletManager {
         this.currentChain = null;
         this.address = null;
         this.provider = null;
+        this.chainId = null;
 
         setWalletPreference(null);
         this.notify();
@@ -136,7 +179,7 @@ class WalletManager {
             }
         });
 
-        window.ethereum.on('chainChanged', () => {
+        window.ethereum.on('chainChanged', (chainIdHex) => {
             // Reload page on chain change (recommended by MetaMask)
             window.location.reload();
         });
@@ -274,6 +317,60 @@ class WalletManager {
             }
         } catch (error) {
             console.error('Error signing message:', error);
+            throw error;
+        }
+    }
+
+    // Transfer USDC to a recipient (for game entries)
+    async transferUSDC(amount, recipientAddress) {
+        if (!this.address) {
+            throw new Error('No wallet connected');
+        }
+
+        try {
+            if (this.currentChain === CHAINS.EVM && window.ethereum) {
+                // ERC-20 transfer function signature
+                const transferFunctionSignature = '0xa9059cbb';
+
+                // Get USDC contract address for current chain
+                const usdcAddress = USDC_ADDRESSES[this.chainId];
+                if (!usdcAddress) {
+                    throw new Error('USDC not supported on this network');
+                }
+
+                // USDC has 6 decimals
+                const amountInSmallestUnit = BigInt(Math.floor(amount * 1000000));
+
+                // Encode the transfer data
+                // Remove '0x' from recipient and pad to 32 bytes
+                const paddedRecipient = recipientAddress.slice(2).padStart(64, '0');
+                // Convert amount to hex and pad to 32 bytes
+                const paddedAmount = amountInSmallestUnit.toString(16).padStart(64, '0');
+
+                const data = transferFunctionSignature + paddedRecipient + paddedAmount;
+
+                // Send transaction
+                const txHash = await window.ethereum.request({
+                    method: 'eth_sendTransaction',
+                    params: [{
+                        from: this.address,
+                        to: usdcAddress,
+                        data: data,
+                    }],
+                });
+
+                console.log('USDC Transfer tx:', txHash);
+                return txHash;
+
+            } else if (this.currentChain === CHAINS.SOLANA && window.solana) {
+                // Solana SPL Token transfer would require more complex setup
+                // For now, throw error indicating it's not yet implemented
+                throw new Error('Solana USDC transfers coming soon');
+            }
+
+            throw new Error('Unsupported chain for USDC transfer');
+        } catch (error) {
+            console.error('Error transferring USDC:', error);
             throw error;
         }
     }
