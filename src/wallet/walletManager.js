@@ -3,6 +3,7 @@
 // For production, consider using React with RainbowKit and Solana wallet adapter
 
 import { formatAddress } from '../utils/formatters.js';
+import { addPlayer } from '../server/playerStore.js';
 import { CHAINS, USDC_ADDRESSES } from '../utils/constants.js';
 import { getWalletPreference, setWalletPreference } from '../services/storageService.js';
 
@@ -105,6 +106,7 @@ class WalletManager {
             // Save preference
             setWalletPreference({ chain: CHAINS.EVM, address: this.address });
 
+            addPlayer(this.address);
             this.notify();
 
             return {
@@ -138,6 +140,7 @@ class WalletManager {
             // Save preference
             setWalletPreference({ chain: CHAINS.SOLANA, address: this.address });
 
+            addPlayer(this.address);
             this.notify();
 
             return {

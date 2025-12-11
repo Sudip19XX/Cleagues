@@ -1,5 +1,6 @@
 // Home Page Component
 import { navigate } from '../App.js';
+import { createFooter } from './Footer.js';
 import { GAME_MODES } from '../utils/constants.js';
 
 export function createHomePage() {
@@ -30,6 +31,9 @@ export function createHomePage() {
   // Mouse glow effect
   const mouseGlow = createMouseGlow();
   page.appendChild(mouseGlow);
+
+  // Footer
+  page.appendChild(createFooter());
 
   return page;
 }
@@ -234,7 +238,6 @@ function createComingSoonCard(index) {
     <p style="color: var(--color-text-secondary); text-align: center; margin-bottom: var(--spacing-lg);">
       Exciting and competitive modes are coming soon stay tuned for updates!
     </p>
-
   `;
 
   return card;
@@ -263,11 +266,32 @@ function createStatsSection() {
   statsGrid.className = 'grid grid-4';
   statsGrid.style.animation = 'fadeIn 0.8s ease-out';
 
+  // Dynamically compute number of game modes
+  const gameModesCount = Object.keys(GAME_MODES).length;
   const stats = [
-    { label: 'Total Players', value: '10,234', icon: '👥' },
-    { label: 'Active Games', value: '1,456', icon: '🎮' },
-    { label: 'Total Volume', value: '$2.4M', icon: '💰' },
-    { label: 'Rewards Paid', value: '$156K', icon: '🏆' },
+    {
+      label: 'Total Players',
+      value: '0',
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-users" style="color: inherit;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" /><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0 -3 -3.85" /></svg>`,
+      id: 'total-players-value'
+    },
+    {
+      label: 'Game Modes',
+      value: `${gameModesCount}`,
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-device-gamepad-3" style="color: inherit;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 12l-3 -3h-2a1 1 0 0 0 -1 1v4a1 1 0 0 0 1 1h2z" /><path d="M15 12l3 -3h2a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-2z" /><path d="M12 15l-3 3v2a1 1 0 0 0 1 1h4a1 1 0 0 0 1 -1v-2z" /><path d="M12 9l-3 -3v-2a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v2z" /></svg>`
+    },
+    {
+      label: 'Total Volume',
+      value: '$0',
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-receipt-dollar" style="color: inherit;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 2a3 3 0 0 1 3 3v16a1 1 0 0 1 -1.555 .832l-2.318 -1.545l-1.42 1.42a1 1 0 0 1 -1.32 .083l-.094 -.083l-1.293 -1.292l-1.293 1.292a1 1 0 0 1 -1.32 .083l-.094 -.083l-1.421 -1.42l-2.317 1.545l-.019 .012l-.054 .03l-.028 .017l-.054 .023l-.05 .023l-.049 .015l-.06 .019l-.052 .009l-.057 .011l-.084 .006l-.026 .003h-.022l-.049 -.003h-.039l-.013 -.003h-.016l-.041 -.008l-.038 -.005l-.015 -.005l-.018 -.002l-.034 -.011l-.04 -.01l-.019 -.007l-.015 -.004l-.029 -.013l-.04 -.015l-.021 -.011l-.013 -.005l-.028 -.016l-.036 -.018l-.014 -.01l-.018 -.01l-.038 -.027l-.022 -.014l-.01 -.009l-.02 -.014l-.045 -.041l-.012 -.008l-.024 -.024l-.035 -.039l-.02 -.02l-.007 -.011l-.011 -.012l-.032 -.045l-.02 -.025l-.012 -.019l-.03 -.054l-.017 -.028l-.023 -.054l-.023 -.05a1 1 0 0 1 -.034 -.108l-.01 -.057l-.01 -.053l-.009 -.132v-16a3 3 0 0 1 3 -3zm-5 3a1 1 0 0 0 -1 1a3 3 0 1 0 0 6v2c-.403 .013 -.75 -.18 -.934 -.5a1 1 0 0 0 -1.732 1a3 3 0 0 0 2.505 1.5l.161 -.001a1 1 0 1 0 2 .001l.176 -.005a3 3 0 0 0 -.176 -5.995v-2c.403 -.013 .75 .18 .934 .5a1 1 0 0 0 1.732 -1a3 3 0 0 0 -2.505 -1.5h-.161a1 1 0 0 0 -1 -1m1 7a1 1 0 0 1 0 2zm-2 -4v2a1 1 0 0 1 0 -2" /></svg>`,
+      id: 'total-volume-value'
+    },
+    {
+      label: 'Rewards Claimed',
+      value: '$0',
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-cashapp" style="color: inherit;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17.1 8.648a.568 .568 0 0 1 -.761 .011a5.682 5.682 0 0 0 -3.659 -1.34c-1.102 0 -2.205 .363 -2.205 1.374c0 1.023 1.182 1.364 2.546 1.875c2.386 .796 4.363 1.796 4.363 4.137c0 2.545 -1.977 4.295 -5.204 4.488l-.295 1.364a.557 .557 0 0 1 -.546 .443h-2.034l-.102 -.011a.568 .568 0 0 1 -.432 -.67l.318 -1.444a7.432 7.432 0 0 1 -3.273 -1.784v-.011a.545 .545 0 0 1 0 -.773l1.137 -1.102c.214 -.2 .547 -.2 .761 0a5.495 5.495 0 0 0 3.852 1.5c1.478 0 2.466 -.625 2.466 -1.614c0 -.989 -1 -1.25 -2.886 -1.954c-2 -.716 -3.898 -1.728 -3.898 -4.091c0 -2.75 2.284 -4.091 4.989 -4.216l.284 -1.398a.545 .545 0 0 1 .545 -.432h2.023l.114 .012a.544 .544 0 0 1 .42 .647l-.307 1.557a8.528 8.528 0 0 1 2.818 1.58l.023 .022c.216 .228 .216 .569 0 .773l-1.057 1.057z" /></svg>`,
+      id: 'total-rewards-value'
+    },
   ];
 
   stats.forEach((stat, index) => {
@@ -279,10 +303,10 @@ function createStatsSection() {
     `;
 
     statCard.innerHTML = `
-      <div style="font-size: 2.5rem; margin-bottom: var(--spacing-sm);">
+      <div style="font-size: 2.5rem; margin-bottom: var(--spacing-sm); color: var(--color-primary);">
         ${stat.icon}
       </div>
-      <div style="font-size: 2rem; font-weight: 700; margin-bottom: var(--spacing-sm); background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+      <div style="font-size: 2rem; font-weight: 700; margin-bottom: var(--spacing-sm); background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"${stat.id ? ` id="${stat.id}"` : ''}>
         ${stat.value}
       </div>
       <div style="color: var(--color-text-secondary); font-size: 0.875rem;">
@@ -294,6 +318,34 @@ function createStatsSection() {
   });
 
   container.appendChild(statsGrid);
+
+  // After rendering stats, fetch actual player count, volume, and rewards
+  Promise.all([
+    fetch('/api/players').then(res => res.ok ? res.json() : { count: 0 }).catch(() => ({ count: 0 })),
+    fetch('/api/volume').then(res => res.ok ? res.json() : { volume: 0 }).catch(() => ({ volume: 0 })),
+    fetch('/api/rewards').then(res => res.ok ? res.json() : { rewards: 0 }).catch(() => ({ rewards: 0 }))
+  ]).then(([playersData, volumeData, rewardsData]) => {
+    // Update Players
+    const playersElem = document.getElementById('total-players-value');
+    if (playersElem) playersElem.textContent = playersData.count || 0;
+
+    // Helper to format currency
+    const formatMoney = (val) => {
+      const num = parseFloat(val || 0);
+      if (num >= 1000000) return `$${(num / 1000000).toFixed(1)}M`;
+      if (num >= 1000) return `$${(num / 1000).toFixed(1)}K`;
+      return `$${num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+    };
+
+    // Update Volume
+    const volumeElem = document.getElementById('total-volume-value');
+    if (volumeElem) volumeElem.textContent = formatMoney(volumeData.volume);
+
+    // Update Rewards
+    const rewardsElem = document.getElementById('total-rewards-value');
+    if (rewardsElem) rewardsElem.textContent = formatMoney(rewardsData.rewards);
+  });
+
   section.appendChild(container);
 
   return section;
@@ -320,7 +372,7 @@ function createBackgroundLines() {
       height: 400%;
       top: -150%;
       left: -150%;
-      background-image: 
+      background-image:
         linear-gradient(rgba(9, 194, 133, 0.12) 1px, transparent 1px),
         linear-gradient(90deg, rgba(9, 194, 133, 0.12) 1px, transparent 1px);
       background-size: 50px 50px;
@@ -328,7 +380,7 @@ function createBackgroundLines() {
       animation: gridMove 50s linear infinite;
       will-change: transform;
     "></div>
-    
+
     <!-- Subtle fade at edges only -->
     <div style="
       position: absolute;
@@ -397,7 +449,7 @@ function createSocialBar() {
       name: 'Telegram',
       url: 'https://t.me/cryptoleagues',
       icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M15 10l-4 4l6 6l4 -16l-18 7l4 2l2 6l3 -4"/>
+  <path d="M15 10l-4 4l6 6l4 -16l-18 7l4 2l2 6l3 -4" />
       </svg>`
     },
     {

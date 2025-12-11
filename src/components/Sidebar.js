@@ -215,7 +215,7 @@ export function createSidebar() {
         gap: 6px;
       ">
         <div style="width: 5px; height: 5px; background: #09C285; border-radius: 50%; animation: pulse 2s infinite;"></div>
-        <span style="font-size: 0.5rem; color: var(--color-text-muted); opacity: 0.7;">Prices & data live from Binance</span>
+        <span style="font-size: 0.5rem; color: var(--color-text-muted); opacity: 0.7; font-weight: bold;">Prices & data live from Binance</span>
       </div>
     </div>
   `;

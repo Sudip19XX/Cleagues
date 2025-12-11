@@ -8,7 +8,7 @@
 // For production testing - no real USDC required
 // Bets are simulated, winners get mock rewards
 // ==========================================
-const TEST_MODE = true;
+const TEST_MODE = false; // Test mode disabled
 
 import { formatCurrency, formatPercentage, getPriceChangeClass } from '../../utils/formatters.js';
 import {
@@ -777,6 +777,14 @@ async function submitBet(battleDuration = 5, expiryMinutes = 30) {
 
       showMatchNotification(battle);
       startBattleCountdown(battle);
+
+      // Report volume for the matched amount (taker side)
+      fetch('/api/volume', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: matchAmount })
+      }).catch(err => console.error('Failed to report volume:', err));
+
     } else {
       // No match, add to open bets
       openBets.unshift(bet);
@@ -788,6 +796,13 @@ async function submitBet(battleDuration = 5, expiryMinutes = 30) {
     renderOpenBets();
 
     // Reset selection logic handled by closeBettingModal which is called after this
+
+    // Report volume to backend (fire and forget)
+    fetch('/api/volume', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: betAmount })
+    }).catch(err => console.error('Failed to report volume:', err));
 
   } catch (error) {
     alert(`Error: ${error.message}`);
@@ -1852,6 +1867,15 @@ async function resolveBattle(battle, tracker) {
   }
 
   const prizePool = (battle.player1.amount + battle.player2.amount) * 0.97; // 3% Platform Fee
+
+  if (winner) {
+    // Report reward to backend (prize pool is the reward paid out)
+    fetch('/api/rewards', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: prizePool })
+    }).catch(err => console.error('Failed to report reward:', err));
+  }
 
   tracker.innerHTML = `
     <div style="text-align: center; padding: var(--spacing-sm);">

@@ -7,7 +7,7 @@
 // For production testing - no real USDC required
 // Bets are simulated, winners get mock rewards
 // ==========================================
-const TEST_MODE = true;
+const TEST_MODE = false; // Test mode disabled
 
 import {
   getAvailableTokens,
@@ -636,15 +636,19 @@ async function createCandleCard(token, interval, timeframeMinutes) {
   const wagerInput = card.querySelector('.wager-input');
 
   function updateSubmitButton() {
-    if (selectedPrediction && parseFloat(wagerInput.value) > 0) {
+    const wagerAmount = parseFloat(wagerInput.value) || 0;
+    // Determine if user has sufficient balance
+    const hasBalance = userBalance >= wagerAmount && wagerAmount > 0;
+    if (selectedPrediction && hasBalance) {
       submitBtn.disabled = false;
       submitBtn.style.opacity = '1';
       submitBtn.textContent = selectedPrediction === 'green' ? 'Buy Green' : 'Buy Red';
       submitBtn.style.background = selectedPrediction === 'green' ? '#09C285' : '#FF4D4F';
     } else if (selectedPrediction) {
+      // User selected prediction but insufficient balance or zero amount
       submitBtn.disabled = true;
-      submitBtn.style.opacity = '0.7';
-      submitBtn.textContent = 'Enter amount';
+      submitBtn.style.opacity = '0.5';
+      submitBtn.textContent = userBalance < wagerAmount ? 'Insufficient Balance' : 'Enter amount';
       submitBtn.style.background = '#3B82F6';
     } else {
       submitBtn.disabled = true;
@@ -1012,6 +1016,7 @@ function resolveBet(key, symbol, closedCandle, predictionData) {
   }
 }
 
+// Bets are allowed regardless of wallet balance; no balance check performed
 async function submitPrediction(tokenSymbol, prediction, tokenName, timeframe, wagerAmount, button) {
   const state = walletManager.getState();
   if (!state.connected) {
@@ -1037,11 +1042,6 @@ async function submitPrediction(tokenSymbol, prediction, tokenName, timeframe, w
     return;
   }
 
-  if (wagerAmount < 0.01) {
-    alert('Minimum wager is 0.01 USDT');
-    return;
-  }
-
   button.disabled = true;
   button.innerHTML = '<div class="loading"></div>';
 
@@ -1056,6 +1056,13 @@ async function submitPrediction(tokenSymbol, prediction, tokenName, timeframe, w
       timeframe,
       wagerAmount,
     });
+
+    // Report volume to backend (fire and forget)
+    fetch('/api/volume', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: wagerAmount })
+    }).catch(err => console.error('Failed to report volume:', err));
 
     // Calculate when the next candle will close
     const timeframeMs = timeframe * 60 * 1000;
@@ -1405,6 +1412,14 @@ function claimReward(symbol, predictionData, button, key) {
   // Simulate claim (in production, this would call the smart contract)
   setTimeout(() => {
     const reward = (predictionData.wagerAmount * 1.9).toFixed(2); // 1.9x payout
+
+    // Report reward to backend
+    fetch('/api/rewards', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: reward })
+    }).catch(err => console.error('Failed to report reward:', err));
+
     alert(`🎉 Congratulations! You won $${reward} USDC!`);
     resetPredictionButton(button);
     if (key) activePredictions.delete(key);

@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import apiRouter from './src/server/api.js';
 
 export default defineConfig({
     server: {
@@ -11,6 +12,12 @@ export default defineConfig({
                 changeOrigin: true,
                 rewrite: (path) => path.replace(/^\/api\/polymarket/, ''),
             },
+        },
+        // Enable custom middleware for our own API routes
+        middlewareMode: true,
+        configureServer: (app) => {
+            // Vite's dev server uses Connect under the hood
+            app.use('/api', apiRouter);
         },
     },
     build: {

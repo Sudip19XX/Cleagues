@@ -285,6 +285,15 @@ export const GAME_MODES = {
       </g>
     </svg>`,
   },
+  PREDICTION_MARKET: {
+    name: 'Prediction Market',
+    description: 'Explore trending prediction markets and place predictions.',
+    path: '/prediction-market',
+    icon: `<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="32" r="30" stroke="currentColor" stroke-width="4"/>
+      <text x="32" y="38" text-anchor="middle" font-size="24" fill="currentColor" font-family="Arial" font-weight="bold">PM</text>
+    </svg>`,
+  },
 };
 
 // Time Periods
