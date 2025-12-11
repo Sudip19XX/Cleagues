@@ -27,8 +27,39 @@ export function createPredictionMarket() {
     `;
     page.appendChild(header);
 
+    // Inject Mobile/Responsive Styles
+    const style = document.createElement('style');
+    style.textContent = `
+        @media (max-width: 768px) {
+            .prediction-market-page {
+                padding: var(--spacing-md) !important;
+            }
+            .prediction-grid {
+                grid-template-columns: 1fr !important;
+                gap: var(--spacing-md) !important;
+            }
+            .controls-container {
+                margin-bottom: var(--spacing-lg) !important;
+            }
+            #market-search {
+                font-size: 16px !important; /* Prevent iOS zoom on focus */
+                padding: 14px 20px !important;
+                padding-left: 48px !important;
+            }
+            .category-btn {
+                padding: 10px 20px !important;
+                font-size: 1rem !important;
+            }
+            .market-card {
+                /* Ensure cards look good on small screens */
+            }
+        }
+    `;
+    page.appendChild(style);
+
     // Search and Filter Container
     const controls = document.createElement('div');
+    controls.className = 'controls-container'; // Added class for media query targeting
     controls.style.cssText = `
         display: flex;
         flex-direction: column;

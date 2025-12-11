@@ -4,6 +4,7 @@
 export const CHAINS = {
   EVM: 'evm',
   SOLANA: 'solana',
+  CAMP: 'camp', // Specific ID for Camp Network integration
 };
 
 // EVM Networks
@@ -31,6 +32,12 @@ export const EVM_NETWORKS = {
     name: 'Base',
     rpcUrl: 'https://mainnet.base.org',
     blockExplorer: 'https://basescan.org',
+  },
+  CAMP: {
+    id: 100001,
+    name: 'Camp Network',
+    rpcUrl: 'https://rpc.campnetwork.xyz', // From camp.md
+    blockExplorer: 'https://explorer.campnetwork.xyz', // Assumed standard
   },
 };
 

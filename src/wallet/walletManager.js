@@ -58,11 +58,72 @@ class WalletManager {
             this.address = accounts[0];
             this.provider = window.ethereum;
 
+            // Optional: Switch to specific chain if requested
+            // Default behavior for EVM button is to just connect, but we might want to support specific chains later
+
+            // Set up event listeners
+            this.setupEVMListeners();
+            // ...
+            setWalletPreference({ chain: CHAINS.EVM, address: this.address });
+            this.notify();
+            return { success: true, address: this.address, chain: this.currentChain };
+        } catch (error) {
+            console.error('Error connecting to EVM wallet:', error);
+            throw error;
+        }
+    }
+
+    // Connect specifically to CAMP Network
+    async connectCAMP() {
+        try {
+            if (!window.ethereum) {
+                throw new Error('No Ethereum wallet found. Please install MetaMask.');
+            }
+
+            // 1. Ensure we are connected to the wallet first
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            if (accounts.length === 0) throw new Error('No accounts found');
+
+            this.address = accounts[0];
+            this.provider = window.ethereum;
+
+            // 2. Switch to CAMP Network
+            const campChainId = '0x' + (100001).toString(16); // Hex for 100001
+
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: campChainId }],
+                });
+            } catch (switchError) {
+                // This error code indicates that the chain has not been added to MetaMask.
+                if (switchError.code === 4902) {
+                    await window.ethereum.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [{
+                            chainId: campChainId,
+                            chainName: 'Camp Network',
+                            rpcUrls: ['https://rpc.campnetwork.xyz'],
+                            nativeCurrency: {
+                                name: 'Ether',
+                                symbol: 'ETH', // Assumed native currency for L2
+                                decimals: 18
+                            },
+                            blockExplorerUrls: ['https://explorer.campnetwork.xyz']
+                        }],
+                    });
+                } else {
+                    throw switchError;
+                }
+            }
+
+            this.currentChain = CHAINS.CAMP;
+
             // Set up event listeners
             this.setupEVMListeners();
 
             // Save preference
-            setWalletPreference({ chain: CHAINS.EVM, address: this.address });
+            setWalletPreference({ chain: CHAINS.CAMP, address: this.address });
 
             this.notify();
 
@@ -71,8 +132,9 @@ class WalletManager {
                 address: this.address,
                 chain: this.currentChain,
             };
+
         } catch (error) {
-            console.error('Error connecting to EVM wallet:', error);
+            console.error('Error connecting to Camp Network:', error);
             throw error;
         }
     }
@@ -286,6 +348,9 @@ class WalletManager {
         try {
             if (preference.chain === CHAINS.EVM) {
                 await this.connectEVM();
+                return true;
+            } else if (preference.chain === CHAINS.CAMP) {
+                await this.connectCAMP();
                 return true;
             } else if (preference.chain === CHAINS.SOLANA) {
                 await this.connectSolana();

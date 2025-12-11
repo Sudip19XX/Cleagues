@@ -108,6 +108,26 @@ function showWalletModal() {
           </div>
         </button>
 
+        <button class="wallet-option" data-chain="${CHAINS.CAMP}">
+          <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: #FF5722; display: flex; align-items: center; justify-content: center; padding: 6px;">
+              <!-- Placeholder Icon for Camp Network -->
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+                <path d="M12 2l8 4.5v11L12 22l-8-4.5v-11L12 2z"></path>
+                <path d="M12 2v20"></path>
+                <path d="M20 6.5l-8 5-8-5"></path>
+              </svg>
+            </div>
+            <div style="flex: 1; text-align: left;">
+              <div style="font-weight: 600; margin-bottom: 4px;">Camp Network</div>
+              <div style="font-size: 0.875rem; color: var(--color-text-muted);">Connect to Camp L2</div>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 18l6-6-6-6"></path>
+            </svg>
+          </div>
+        </button>
+
         <button class="wallet-option" data-chain="${CHAINS.SOLANA}">
           <div style="display: flex; align-items: center; gap: var(--spacing-md);">
             <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #14141f 0%, #1a1a2e 100%); display: flex; align-items: center; justify-content: center; padding: 8px;">
@@ -173,6 +193,8 @@ function showWalletModal() {
       try {
         if (chain === CHAINS.EVM) {
           await walletManager.connectEVM();
+        } else if (chain === CHAINS.CAMP) {
+          await walletManager.connectCAMP();
         } else if (chain === CHAINS.SOLANA) {
           await walletManager.connectSolana();
         }
@@ -214,8 +236,8 @@ function showWalletMenu(button) {
   `;
 
   const state = walletManager.getState();
-  const chainLabel = state.chain === CHAINS.EVM ? 'EVM' : 'SOL';
-  const chainColor = state.chain === CHAINS.EVM ? '#E2761B' : '#9945FF';
+  const chainLabel = state.chain === CHAINS.EVM ? 'EVM' : (state.chain === CHAINS.CAMP ? 'CAMP' : 'SOL');
+  const chainColor = state.chain === CHAINS.EVM ? '#E2761B' : (state.chain === CHAINS.CAMP ? '#FF5722' : '#9945FF');
 
   menu.innerHTML = `
     <!-- Network tag centered -->
