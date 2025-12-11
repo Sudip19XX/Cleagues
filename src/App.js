@@ -10,6 +10,8 @@ import { createPredictCandle } from './components/games/PredictCandle.js';
 import { createPvPBattle } from './components/games/PvPBattle.js';
 import { createPendingActionWidget, onRouteChange } from './components/PendingActionWidget.js';
 
+import { createPredictionMarket } from './components/PredictionMarket.js';
+
 // Simple router state
 let currentRoute = '/';
 let sidebarElement = null;
@@ -74,7 +76,7 @@ function renderRoute(container) {
     currentRoute = path;
 
     // Determine if sidebar should be shown
-    const isGameMode = ['/crypto-duel', '/dream-team', '/time-based', '/predict-candle', '/pvp-battle'].includes(path);
+    const isGameMode = ['/crypto-duel', '/dream-team', '/time-based', '/predict-candle', '/pvp-battle', '/prediction-market'].includes(path);
 
     if (headerElement) {
         if (path === '/') {
@@ -124,6 +126,9 @@ function renderRoute(container) {
             break;
         case '/pvp-battle':
             component = createPvPBattle();
+            break;
+        case '/prediction-market':
+            component = createPredictionMarket();
             break;
         default:
             component = create404Page();

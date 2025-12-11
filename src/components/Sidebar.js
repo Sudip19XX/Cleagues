@@ -162,9 +162,12 @@ export function createSidebar() {
           </div>
           
           <div class="sidebar-links">
-            <div style="padding: 8px 12px; font-size: 0.75rem; color: var(--color-text-muted); opacity: 0.7; font-style: italic;">
-              Coming Soon...
-            </div>
+            <a href="#prediction-market" class="sidebar-link" data-page="prediction-market">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+              </svg>
+              <span>Trending Bets</span>
+            </a>
           </div>
         </div>
       </div>

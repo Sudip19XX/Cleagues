@@ -4,6 +4,14 @@ export default defineConfig({
     server: {
         port: 5173,
         open: true,
+        host: true,
+        proxy: {
+            '/api/polymarket': {
+                target: 'https://gamma-api.polymarket.com',
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/api\/polymarket/, ''),
+            },
+        },
     },
     build: {
         outDir: 'dist',
