@@ -737,35 +737,30 @@ async function submitBet(battleDuration = 5, expiryMinutes = 30) {
       status: 'open', // 'open', 'matched', 'completed'
     };
 
-    // Check for matching opponent
-    const oppositeDir = selectedDirection === 'up' ? 'down' : 'up';
-    const matchingBet = openBets.find(b =>
-      b.symbol === bet.symbol &&
-      b.direction === oppositeDir &&
-      b.amount === bet.amount &&
-      b.status === 'open'
-    );
+    // Submit to API
+    const response = await fetch('/api/pvp/bet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        betData: {
+          ...bet,
+          startPrice: selectedToken.price // Send current price for reference if matched immediately
+        }
+      })
+    });
 
-    if (matchingBet) {
+    const result = await response.json();
+
+    if (result.status === 'matched') {
       // Match found! Fetch current price as reference
-      let referencePrice;
-      try {
-        const tickers = await fetchMultipleTickers([bet.symbol]);
-        referencePrice = tickers[0]?.price || selectedToken.price;
-      } catch (e) {
-        referencePrice = selectedToken.price;
-      }
-
-      // Set reference price for both players
-      matchingBet.status = 'matched';
-      matchingBet.startPrice = referencePrice;
-      bet.status = 'matched';
-      bet.startPrice = referencePrice;
+      let referencePrice = selectedToken.price;
+      // If we got a match, the `result.match` is the OPPONENT'S bet
+      const opponentBet = result.match;
 
       const battle = {
         id: Date.now().toString(),
-        player1: matchingBet,
-        player2: bet,
+        player1: { ...opponentBet, status: 'matched' }, // The maker
+        player2: { ...bet, status: 'matched' }, // Us (the taker)
         startTime: Date.now(),
         endTime: Date.now() + (PVP_DURATION_MINUTES * 60 * 1000),
         symbol: bet.symbol,
@@ -773,31 +768,35 @@ async function submitBet(battleDuration = 5, expiryMinutes = 30) {
       };
 
       activeBattles.push(battle);
-      openBets = openBets.filter(b => b.id !== matchingBet.id);
+      // Remove the matched bet from open list locally if present
+      openBets = openBets.filter(b => b.id !== opponentBet.id);
 
       showMatchNotification(battle);
       startBattleCountdown(battle);
 
-      // Report volume for the matched amount (taker side)
+      // Report volume
       fetch('/api/volume', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: matchAmount })
+        body: JSON.stringify({ amount: bet.amount })
       }).catch(err => console.error('Failed to report volume:', err));
 
     } else {
-      // No match, add to open bets
-      openBets.unshift(bet);
-      myBets.push(bet);
-      showBetPlacedNotification(bet);
+      // Created new open bet
+      const createdBet = result.bet;
+      // Transform for local display if needed
+      const localBet = {
+        ...bet,
+        id: createdBet.id
+      };
+
+      openBets.unshift(localBet);
+      myBets.push(localBet);
+      showBetPlacedNotification(localBet);
     }
 
-    // Refresh open bets panel
-    renderOpenBets();
-
-    // Reset selection logic handled by closeBettingModal which is called after this
-
-    // Report volume to backend (fire and forget)
+    // Refresh open bets from server to be sure
+    loadOpenBets();
     fetch('/api/volume', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1621,31 +1620,44 @@ async function processAcceptBet(betId, matchAmount) {
   }
   try {
     const tickers = await fetchMultipleTickers([bet.symbol]);
-    const currentPrice = tickers[0]?.price || bet.startPrice;
+    const currentPrice = tickers[0]?.price || bet.price || 0;
 
+    // Call API to accept match
+    const response = await fetch('/api/pvp/match', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        betId: betId,
+        userAddress: state.address,
+        startPrice: currentPrice
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to accept match');
+    }
+
+    // Success! 
+    const matchedBet = result.match;
+    // Construct local battle object
     const myBet = {
-      id: Date.now().toString(),
-      symbol: bet.symbol,
-      name: bet.name,
-      image: bet.image,
-      direction: bet.direction === 'up' ? 'down' : 'up',
-      amount: matchAmount, // Use the matched amount which might be higher
-      startPrice: currentPrice,
-      timestamp: Date.now(),
-      user: state.address.slice(0, 6) + '...' + state.address.slice(-4),
+      id: 'match-' + Date.now(),
+      symbol: matchedBet.symbol,
+      direction: matchedBet.direction === 'up' ? 'down' : 'up', // Oppposite
+      amount: matchedBet.amount,
+      user: state.address,
       status: 'matched',
     };
 
-    bet.status = 'matched';
-    bet.startPrice = currentPrice;
-
     const battle = {
-      id: Date.now().toString(),
-      player1: bet,
-      player2: myBet,
+      id: matchedBet.id, // Use same ID or new one? DB uses UUID, local uses strings. Let's use DB ID.
+      player1: { ...matchedBet, status: 'matched' }, // The maker (from DB)
+      player2: myBet, // Me
       startTime: Date.now(),
-      endTime: Date.now() + (bet.duration * 60 * 1000),
-      symbol: bet.symbol,
+      endTime: Date.now() + (matchedBet.duration * 60 * 1000),
+      symbol: matchedBet.symbol,
       startPrice: currentPrice,
     };
 
@@ -1655,6 +1667,13 @@ async function processAcceptBet(betId, matchAmount) {
     showMatchNotification(battle);
     startBattleCountdown(battle);
     renderOpenBets();
+
+    // Update volume
+    fetch('/api/volume', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: matchedBet.amount })
+    }).catch(err => console.error('Failed to report volume:', err));
 
   } catch (error) {
     alert(`Error accepting bet: ${error.message}`);

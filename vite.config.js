@@ -13,13 +13,15 @@ export default defineConfig({
                 rewrite: (path) => path.replace(/^\/api\/polymarket/, ''),
             },
         },
-        // Enable custom middleware for our own API routes
-        middlewareMode: true,
-        configureServer: (app) => {
-            // Vite's dev server uses Connect under the hood
-            app.use('/api', apiRouter);
-        },
     },
+    plugins: [
+        {
+            name: 'configure-server',
+            configureServer(server) {
+                server.middlewares.use('/api', apiRouter);
+            },
+        },
+    ],
     build: {
         outDir: 'dist',
         sourcemap: true,

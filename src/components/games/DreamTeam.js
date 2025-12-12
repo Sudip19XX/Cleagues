@@ -1412,31 +1412,52 @@ async function openCaptainModal() {
       btn.style.cssText += 'display: flex; align-items: center; justify-content: center; gap: 8px;';
 
       try {
-        // Send full token objects including direction
-        const result = await submitDreamTeam({
-          team: selectedTeam.map(t => ({
-            id: t.id,
-            direction: t.direction
-          })),
-          captainIndex,
-          viceCaptainIndex: viceIndex,
+        // Submit to backend API
+        const response = await fetch('/api/dream-team', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            address: walletAddress,
+            teamData: {
+              tokens: selectedTeam.map(t => {
+                const refPrice = referencePrices[t.symbol]?.openPrice || t.currentPrice;
+                return {
+                  id: t.id,
+                  symbol: t.symbol,
+                  name: t.name,
+                  direction: t.direction,
+                  referencePrice: refPrice,
+                  currentPrice: t.currentPrice // store entry price too just in case
+                };
+              }),
+              captainId: captain.id,
+              viceCaptainId: viceCaptain.id
+            }
+          })
         });
 
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to submit team');
+        }
+
         overlay.remove();
-        alert(`✅ ${result.message}\n\nTeam ID: ${result.teamId}\nEntry Fee: ${result.entryFee} USDC\nTransaction: ${result.txHash.slice(0, 10)}...`);
+        alert(`✅ Team Submitted Successfully!\n\nCaptain: ${captain.symbol}\nVice Captain: ${viceCaptain.symbol}\n\nGood luck!`);
 
         // Reset team
         selectedTeam = [];
+        syncToGlobalState();
         updateUI();
       } catch (error) {
+        console.error('Submission error:', error);
         btn.disabled = false;
         btn.textContent = 'Submit Team (5 USDC)';
 
         // Better error messages
         let errorMsg = error.message;
-        if (error.message.includes('User denied') || error.message.includes('rejected')) {
-          errorMsg = 'Transaction was cancelled';
-        }
         alert(`❌ Error: ${errorMsg}`);
       }
     });
