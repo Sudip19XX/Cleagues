@@ -5,11 +5,19 @@ import { supabase } from './db.js';
 export const addPlayer = async (address) => {
     if (address) {
         try {
-            await supabase
+            console.log('Attempting to add player to Supabase:', address);
+            const { data, error } = await supabase
                 .from('players')
-                .upsert({ address: address.toLowerCase(), last_seen: new Date() }, { onConflict: 'address' });
+                .upsert({ address: address.toLowerCase(), last_seen: new Date() }, { onConflict: 'address' })
+                .select();
+
+            if (error) {
+                console.error('Error adding player to Supabase:', error);
+            } else {
+                console.log('Player added/updated successfully:', data);
+            }
         } catch (error) {
-            console.error('Error adding player:', error);
+            console.error('Unexpected error adding player:', error);
         }
     }
 };

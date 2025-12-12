@@ -13,4 +13,9 @@ if (!supabaseUrl || !supabaseKey) {
     console.warn('Supabase credentials not found. Ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set.');
 }
 
-export const supabase = createClient(supabaseUrl || '', supabaseKey || '');
+// Fallback to placeholder values to prevent build-time crashes
+// when this file is imported by vite.config.js via api.js
+const url = supabaseUrl || 'https://placeholder.supabase.co';
+const key = supabaseKey || 'placeholder-key';
+
+export const supabase = createClient(url, key);
