@@ -1,4 +1,7 @@
-import { supabase } from './db.js';
+// In-memory Dream Team store
+// Replaces database implementation
+
+let submissions = [];
 
 export const submitDreamTeam = async (address, teamData) => {
     if (!address || !teamData || !teamData.tokens) {
@@ -6,20 +9,18 @@ export const submitDreamTeam = async (address, teamData) => {
     }
 
     try {
-        const { data, error } = await supabase
-            .from('dream_team_submissions')
-            .insert({
-                user_address: address,
-                tokens: teamData.tokens,
-                captain_id: teamData.captainId,
-                vice_captain_id: teamData.viceCaptainId,
-                created_at: new Date()
-            })
-            .select()
-            .single();
+        const newSubmission = {
+            id: crypto.randomUUID(),
+            user_address: address,
+            tokens: teamData.tokens,
+            captain_id: teamData.captainId,
+            vice_captain_id: teamData.viceCaptainId,
+            created_at: new Date()
+        };
 
-        if (error) throw error;
-        return data;
+        submissions.push(newSubmission);
+        console.log('Dream Team submitted to memory:', newSubmission.id);
+        return newSubmission;
     } catch (error) {
         console.error('Error submitting Dream Team:', error);
         throw error;
@@ -28,14 +29,14 @@ export const submitDreamTeam = async (address, teamData) => {
 
 export const getUserDreamTeams = async (address) => {
     try {
-        const { data, error } = await supabase
-            .from('dream_team_submissions')
-            .select('*')
-            .eq('user_address', address)
-            .order('created_at', { ascending: false });
+        // Find existing submissions for this user?
+        // In the DB version, it fetches all.
+        // We'll mimic that.
+        const userTeams = submissions
+            .filter(sub => sub.user_address.toLowerCase() === address.toLowerCase())
+            .sort((a, b) => b.created_at - a.created_at);
 
-        if (error) throw error;
-        return data;
+        return userTeams;
     } catch (error) {
         console.error('Error fetching user Dream Teams:', error);
         return [];

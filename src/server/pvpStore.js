@@ -1,23 +1,25 @@
-import { supabase } from './db.js';
+// In-memory PvP store
+// Replaces database implementation
+
+let bets = [];
 
 export const createBet = async (betData) => {
     try {
-        const { data, error } = await supabase
-            .from('pvp_bets')
-            .insert({
-                user_address: betData.user,
-                symbol: betData.symbol,
-                direction: betData.direction,
-                amount: betData.amount,
-                duration: betData.duration,
-                expires_at: new Date(betData.expiryTime),
-                status: 'open'
-            })
-            .select()
-            .single();
+        const newBet = {
+            id: crypto.randomUUID(),
+            user_address: betData.user,
+            symbol: betData.symbol,
+            direction: betData.direction,
+            amount: betData.amount,
+            duration: betData.duration,
+            created_at: new Date(),
+            expires_at: new Date(betData.expiryTime),
+            status: 'open'
+        };
 
-        if (error) throw error;
-        return data;
+        bets.push(newBet);
+        console.log('Bet created in memory:', newBet.id);
+        return newBet;
     } catch (error) {
         console.error('Error creating PvP bet:', error);
         throw error;
@@ -26,25 +28,21 @@ export const createBet = async (betData) => {
 
 export const getOpenBets = async () => {
     try {
-        const { data, error } = await supabase
-            .from('pvp_bets')
-            .select('*')
-            .eq('status', 'open')
-            .gt('expires_at', new Date().toISOString())
-            .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        return data.map(bet => ({
-            id: bet.id,
-            symbol: bet.symbol,
-            direction: bet.direction,
-            amount: bet.amount,
-            user: bet.user_address,
-            duration: bet.duration,
-            timestamp: new Date(bet.created_at).getTime(),
-            expiryTime: new Date(bet.expires_at).getTime(),
-            status: bet.status
-        }));
+        const now = new Date();
+        return bets
+            .filter(bet => bet.status === 'open' && new Date(bet.expires_at) > now)
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+            .map(bet => ({
+                id: bet.id,
+                symbol: bet.symbol,
+                direction: bet.direction,
+                amount: bet.amount,
+                user: bet.user_address,
+                duration: bet.duration,
+                timestamp: new Date(bet.created_at).getTime(),
+                expiryTime: new Date(bet.expires_at).getTime(),
+                status: bet.status
+            }));
     } catch (error) {
         console.error('Error fetching open bets:', error);
         return [];
@@ -54,46 +52,44 @@ export const getOpenBets = async () => {
 export const findMatch = async (betData) => {
     // Look for an OPPOSITE bet with SAME symbol and SAME amount
     const oppositeDir = betData.direction === 'up' ? 'down' : 'up';
+    const now = new Date();
 
     try {
-        const { data, error } = await supabase
-            .from('pvp_bets')
-            .select('*')
-            .eq('symbol', betData.symbol)
-            .eq('direction', oppositeDir)
-            .eq('amount', betData.amount)
-            .eq('status', 'open')
-            .gt('expires_at', new Date().toISOString())
-            .neq('user_address', betData.user) // Don't match self
-            .limit(1)
-            .single();
+        const match = bets.find(bet =>
+            bet.symbol === betData.symbol &&
+            bet.direction === oppositeDir &&
+            bet.amount == betData.amount && // Loose equality for potential string/number mix
+            bet.status === 'open' &&
+            new Date(bet.expires_at) > now &&
+            bet.user_address !== betData.user
+        );
 
-        if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows found"
-            throw error;
-        }
-
-        return data || null;
+        return match || null;
     } catch (error) {
         console.error('Error finding match:', error);
-        return null; // Return null if error or no match
+        return null;
     }
 };
 
 export const acceptMatch = async (betId, opponentAddress, startPrice) => {
     try {
-        const { data, error } = await supabase
-            .from('pvp_bets')
-            .update({
-                status: 'matched',
-                opponent_address: opponentAddress,
-                start_price: startPrice
-            })
-            .eq('id', betId)
-            .select()
-            .single();
+        const betIndex = bets.findIndex(b => b.id === betId);
 
-        if (error) throw error;
-        return data;
+        if (betIndex === -1) {
+            throw new Error('Bet not found');
+        }
+
+        const bet = bets[betIndex];
+
+        // Update the bet
+        bet.status = 'matched';
+        bet.opponent_address = opponentAddress;
+        bet.start_price = startPrice;
+
+        // In a real system, we might create a separate match record, 
+        // but for now updating the bet works similarly to the DB approach
+
+        return bet;
     } catch (error) {
         console.error('Error accepting match:', error);
         throw error;
