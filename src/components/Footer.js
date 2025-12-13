@@ -17,9 +17,9 @@ export function createFooter() {
       
       <!-- Links Group 1: Platform -->
       <div style="display: flex; gap: var(--spacing-xl);">
-        <a href="#/about-us" style="color: var(--color-text-secondary); text-decoration: none; transition: color 0.2s;">About Us</a>
-        <a href="#/how-it-works" style="color: var(--color-text-secondary); text-decoration: none; transition: color 0.2s;">How it Works</a>
-        <a href="#/contact-us" style="color: var(--color-text-secondary); text-decoration: none; transition: color 0.2s;">Contact Us</a>
+        <a href="#/learn-more?section=about" style="color: var(--color-text-secondary); text-decoration: none; transition: color 0.2s;">About Us</a>
+        <a href="#/learn-more?section=modes" style="color: var(--color-text-secondary); text-decoration: none; transition: color 0.2s;">How it Works</a>
+        <a href="#/learn-more?section=support" style="color: var(--color-text-secondary); text-decoration: none; transition: color 0.2s;">Contact Us</a>
       </div>
 
       <!-- Divider -->
@@ -27,7 +27,7 @@ export function createFooter() {
 
       <!-- Links Group 2: Support -->
       <div style="display: flex; gap: var(--spacing-xl);">
-        <a href="#/support" style="color: var(--color-text-secondary); text-decoration: none; transition: color 0.2s;">Help Center</a>
+        <a href="#/learn-more?section=support" style="color: var(--color-text-secondary); text-decoration: none; transition: color 0.2s;">Help Center</a>
         <a href="#/terms" style="color: var(--color-text-secondary); text-decoration: none; transition: color 0.2s;">Terms of Use</a>
         <a href="#/privacy" style="color: var(--color-text-secondary); text-decoration: none; transition: color 0.2s;">Privacy Policy</a>
       </div>

@@ -72,19 +72,57 @@ export const GAME_MODES = {
     path: '/crypto-duel',
     icon: `<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <linearGradient id="vs-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient id="duel-green" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" style="stop-color:#09C285"/>
               <stop offset="100%" style="stop-color:#07a371"/>
             </linearGradient>
+            <linearGradient id="duel-red" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#EF4444"/>
+              <stop offset="100%" style="stop-color:#DC2626"/>
+            </linearGradient>
           </defs>
           <style>
-             @keyframes pulse-vs {
-               0%, 100% { transform: scale(1); }
-               50% { transform: scale(1.1); }
-             }
-             .vs-text { animation: pulse-vs 2s ease-in-out infinite; transform-origin: center; }
+            @keyframes duel-float-1 {
+              0%, 100% { transform: translate(0, 0); }
+              50% { transform: translate(-3px, 3px); }
+            }
+            @keyframes duel-float-2 {
+              0%, 100% { transform: translate(0, 0); }
+              50% { transform: translate(3px, -3px); }
+            }
+            @keyframes spark-flash {
+              0%, 100% { opacity: 0; transform: scale(0.5); }
+              50% { opacity: 1; transform: scale(1.2); }
+            }
           </style>
-          <text x="32" y="42" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="32" fill="#09C285" style="font-style: italic; letter-spacing: -2px;" class="vs-text">VS</text>
+          
+          <!-- Coin 1 (Top Right) - Green/Bitcoin -->
+          <g style="animation: duel-float-1 2s ease-in-out infinite;">
+            <circle cx="42" cy="22" r="12" fill="url(#duel-green)" stroke="none"/>
+            <circle cx="42" cy="22" r="12" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+            <!-- Better Bitcoin B (Filled) -->
+             <g transform="translate(35, 15) scale(0.6)">
+                <path fill="white" d="M16.4,12.5c1.4-0.9,2.3-2.3,2-4.2c-0.5-2.5-2.4-3.5-5.6-3.7V0h-2.8v4.6H7.7V0H4.9v4.5H0v2.9h2.8 c0.3,0,0.6-0.1,0.8,0.3v8.5c0,0.4-0.3,0.3-0.8,0.3H0v2.9h4.9v4.8h2.8v-4.7h2.3c3.7,0,5.9-1.3,6.3-4.6 C16.4,14.6,16.5,13.3,16.4,12.5z M9.1,6.8h2.5c2,0,2.1,0.8,2.1,1.9s-0.2,2-2.1,2H9.1V6.8z M9.7,16.7H7.1v-4.5h2.8 c2.1,0,2.3,1,2.3,2.2S11.9,16.7,9.7,16.7z"/>
+             </g>
+          </g>
+
+          <!-- Coin 2 (Bottom Left) - Red/Ethereum -->
+          <g style="animation: duel-float-2 2s ease-in-out infinite;">
+            <circle cx="22" cy="42" r="12" fill="url(#duel-red)" stroke="none"/>
+            <circle cx="22" cy="42" r="12" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+            <!-- ETH Logo (Wireframe) -->
+            <g transform="translate(15, 30) scale(0.6)">
+                <!-- Top Pyramid -->
+                <path d="M11 1 L1 17 L11 23 L21 17 Z" stroke="white" stroke-width="2" stroke-linejoin="round" fill="none"/>
+                <path d="M11 1 L11 23" stroke="white" stroke-width="2" stroke-linejoin="round" fill="none"/>
+                <!-- Bottom Pyramid -->
+                <path d="M11 26 L1 17 L11 36 L21 17 Z" stroke="white" stroke-width="2" stroke-linejoin="round" fill="none"/>
+                <path d="M11 26 L11 36" stroke="white" stroke-width="2" stroke-linejoin="round" fill="none"/>
+            </g>
+          </g>
+
+          <!-- Clash/Spark in center -->
+          <path d="M32 28 L35 32 L39 29 L36 35 L40 40 L34 37 L30 42 L31 36 L26 33 L31 31 Z" fill="#FFFFFF" style="animation: spark-flash 1s ease-in-out infinite; transform-origin: center;"/>
         </svg>`,
   },
   DREAM_TEAM: {
@@ -130,7 +168,7 @@ export const GAME_MODES = {
         </svg>`,
   },
   TIME_BASED: {
-    name: '1min Frenzy',
+    name: '60 Sec Sprint',
     description: "Feel the rush with quick decisions. Predict the price movement in just 60 seconds. Beat the high-intensity race against time.",
     path: '/time-based',
     icon: `<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">

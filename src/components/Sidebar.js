@@ -120,7 +120,7 @@ export function createSidebar() {
                 <path d="M12 5V2M10 2h4" />
                 <line x1="12" y1="14" x2="12" y2="8" stroke="currentColor" stroke-width="1.5" class="tick-hand-sidebar"/>
               </svg>
-              <span>1min Frenzy</span>
+              <span>60 Sec Sprint</span>
             </a>
 
             <a href="#crypto-duel" class="sidebar-link" data-page="crypto-duel">
@@ -174,7 +174,7 @@ export function createSidebar() {
       
       <!-- Footer Section - positioned at bottom -->
       <div class="sidebar-footer" style="position: absolute; bottom: 18px; left: 0; right: 0;">
-        <a href="#faqs" class="sidebar-footer-link">
+        <a href="#/faqs" class="sidebar-footer-link">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"></circle>
             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
@@ -182,14 +182,14 @@ export function createSidebar() {
           </svg>
           <span>FAQs</span>
         </a>
-        <a href="#terms" class="sidebar-footer-link">
+        <a href="#/terms" class="sidebar-footer-link">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
             <polyline points="14 2 14 8 20 8"></polyline>
           </svg>
           <span>Terms & Conditions</span>
         </a>
-        <a href="#team" class="sidebar-footer-link">
+        <div class="sidebar-footer-link" style="cursor: default; pointer-events: none; opacity: 0.7;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
             <circle cx="9" cy="7" r="4"></circle>
@@ -197,7 +197,7 @@ export function createSidebar() {
             <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
           </svg>
           <span>Crypto Leagues Team</span>
-        </a>
+        </div>
       </div>
       
       <!-- Live data indicator - pinned to bottom -->

@@ -2,6 +2,7 @@
 import { navigate } from '../App.js';
 import { createFooter } from './Footer.js';
 import { GAME_MODES } from '../utils/constants.js';
+import { createBackgroundLines } from './BackgroundLines.js';
 
 export function createHomePage() {
 
@@ -49,12 +50,11 @@ function createHeroSection() {
   container.className = 'container';
 
   container.innerHTML = `
-    <h1 style="font-size: 4rem; margin-bottom: var(--spacing-lg); animation: fadeIn 0.8s ease-out; color: #000000;">
+    <h1 style="font-size: 4rem; margin-bottom: var(--spacing-lg); animation: fadeIn 0.8s ease-out; color: var(--color-primary) !important;">
       CRYPTO LEAGUES
     </h1>
     <p style="font-size: 1.2rem; line-height: 1.6; color: var(--color-text-secondary); margin-bottom: var(--spacing-2xl); max-width: 800px; margin-left: auto; margin-right: auto; animation: fadeIn 0.8s ease-out 0.2s both;">
-      Experience the future of crypto fantasy trading. Compete in high-stakes leagues, predict market movements with precision, and build your dream portfolio.
-      Master the markets, climb the global leaderboards, and earn real rewards in a decentralized, skill-based ecosystem.
+      A one-of-a-kind crypto-native fantasy platform where you can predict market movements and earn real rewards without holding tokens. Bridging fantasy sports with crypto, we allow beginners and experts to compete in a gamified, risk-free environment.
     </p>
     <div style="display: flex; gap: var(--spacing-md); justify-content: center; flex-wrap: wrap; animation: fadeIn 0.8s ease-out 0.4s both;">
       <button class="btn btn-primary btn-lg" id="get-started">
@@ -78,7 +78,7 @@ function createHeroSection() {
     });
 
     learnMoreBtn?.addEventListener('click', () => {
-      alert('Crypto Leagues is a Web3 fantasy trading platform where you can compete with other players by predicting crypto price movements!');
+      navigate('/learn-more');
     });
   }, 0);
 
@@ -97,7 +97,7 @@ function createGamesSection() {
   container.className = 'container';
 
   const title = document.createElement('h2');
-  title.textContent = 'Game Modes';
+  title.textContent = 'League Modes';
   title.style.cssText = `
     text-align: center;
     margin-bottom: var(--spacing-2xl);
@@ -351,60 +351,7 @@ function createStatsSection() {
   return section;
 }
 
-function createBackgroundLines() {
-  const bg = document.createElement('div');
-  bg.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-    overflow: hidden;
-    pointer-events: none;
-  `;
 
-  // Grid Lines - smoother animation with reduced opacity and larger grid
-  bg.innerHTML = `
-    <div class="grid-container" style="
-      position: absolute;
-      width: 400%;
-      height: 400%;
-      top: -150%;
-      left: -150%;
-      background-image:
-        linear-gradient(rgba(9, 194, 133, 0.12) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(9, 194, 133, 0.12) 1px, transparent 1px);
-      background-size: 50px 50px;
-      transform: perspective(1000px) rotateX(70deg);
-      animation: gridMove 50s linear infinite;
-      will-change: transform;
-    "></div>
-
-    <!-- Subtle fade at edges only -->
-    <div style="
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: 
-        radial-gradient(ellipse 120% 100% at center 100%, transparent 0%, transparent 60%, var(--color-bg-primary) 90%),
-        linear-gradient(to bottom, var(--color-bg-primary) 0%, transparent 5%, transparent 95%, var(--color-bg-primary) 100%),
-        linear-gradient(to right, var(--color-bg-primary) 0%, transparent 5%, transparent 95%, var(--color-bg-primary) 100%);
-      pointer-events: none;
-    "></div>
-    
-    <style>
-      @keyframes gridMove {
-        0% { transform: perspective(1000px) rotateX(70deg) translateY(0); }
-        100% { transform: perspective(1000px) rotateX(70deg) translateY(50px); }
-      }
-    </style>
-  `;
-
-  return bg;
-}
 
 function createSocialBar() {
   const bar = document.createElement('div');

@@ -69,7 +69,7 @@ export function createTimeBasedAction() {
         <!-- Center Dot -->
         <circle cx="32" cy="34" r="3" fill="#3B82F6"/>
       </svg>
-      1min Frenzy
+      60 Sec Sprint
     </h1>
     <p style="text-align: center; color: var(--color-text-secondary); font-size: 1.125rem;">
       Predict if the price will go UP or DOWN in 1 minute.
@@ -191,6 +191,7 @@ function createPredictionCard(token) {
     <div class="prediction-area" style="display: flex; flex-direction: column; gap: var(--spacing-md);">
       <div style="text-align: center; font-size: 0.9rem; color: var(--color-text-secondary); margin-bottom: var(--spacing-xs);">
         Will ${token.symbol.toUpperCase()} go UP or DOWN in 1 min?
+        <div style="font-size: 0.85rem; color: #3B82F6; font-weight: 600; margin-top: 4px;">Entry: $5 USDC</div>
       </div>
 
       <div style="display: flex; gap: var(--spacing-md);">
@@ -321,6 +322,13 @@ async function startPrediction(token, type, card) {
   const state = walletManager.getState();
   if (!state.connected) {
     alert('Please connect your wallet first!');
+    return;
+  }
+
+  // Check Balance
+  const balance = await walletManager.getUSDCBalance();
+  if (parseFloat(balance) < 5) {
+    alert("Insufficient Balance! Minimum bet is $5 USDC.");
     return;
   }
 
@@ -614,7 +622,7 @@ function updateFrenzyTrackerContent(tracker, symbol, type, remainingMs) {
 
   tracker.innerHTML = `
         <div style="display: flex; flex-direction: column; gap: 2px;">
-            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.7); font-weight: 500;">1min Frenzy</div>
+            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.7); font-weight: 500;">60 Sec Sprint</div>
             <div style="display: flex; align-items: center; gap: 6px;">
                 <span style="font-weight: 700; font-size: 0.95rem;">${symbol}</span>
                 <span style="color: ${color}; font-weight: 700; font-size: 0.9rem;">${arrow} ${type}</span>

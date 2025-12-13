@@ -1,10 +1,11 @@
 // Crypto Duel Game Component
 
 import { fetchTopTokens } from '../../services/priceService.js';
-import { submitDuelPrediction } from '../../contracts/gameContract.js';
+import { submitDuelPrediction, claimReward } from '../../contracts/gameContract.js';
 import { formatCurrency, formatPercentage, getPriceChangeClass } from '../../utils/formatters.js';
 import { TIME_PERIODS } from '../../utils/constants.js';
 import walletManager from '../../wallet/walletManager.js';
+import { updatePoints, getPoints } from '../../server/playerStore.js';
 import {
   BINANCE_TOKENS,
   fetchMultipleTickers,
@@ -62,6 +63,21 @@ export function createCryptoDuel() {
     <p style="color: var(--color-text-secondary); font-size: 1.125rem;">
       Select two cryptocurrencies and predict which one will outperform the other
     </p>
+    <div id="user-points-display" style="
+        background: rgba(9, 194, 133, 0.1); 
+        color: #09C285; 
+        padding: 8px 16px; 
+        border-radius: 20px; 
+        display: inline-flex; 
+        align-items: center;
+        gap: 8px;
+        margin-top: var(--spacing-md);
+        font-weight: 600;
+        border: 1px solid rgba(9, 194, 133, 0.2);
+        cursor: help;
+    " title="Win: +5 Points | Lose: -10 Points | Entry: 20 Points">
+        <span>Connect Wallet</span>
+    </div>
   `;
   mainContent.appendChild(header);
 
@@ -92,6 +108,26 @@ export function createCryptoDuel() {
 
   page.appendChild(mainContent);
   page.appendChild(selectionPanel);
+
+  // Points updater logic
+  const updateBalance = async () => {
+    const state = walletManager.getState();
+    const el = document.getElementById('user-points-display');
+    if (el) {
+      if (state.connected && state.address) {
+        const p = await getPoints(state.address);
+        el.innerHTML = `💎 Balance: ${p} Points`;
+      } else {
+        el.innerHTML = '🔌 Connect Wallet';
+      }
+    }
+  };
+
+  // Subscribe to updates
+  walletManager.subscribe(updateBalance);
+
+  // Initial update
+  setTimeout(updateBalance, 100);
 
   // Load tokens
   loadTokens(tokenGrid, selectionPanel);
@@ -644,10 +680,28 @@ let activeDuels = [];
 
 async function makePrediction(winner, overlay) {
   const btn = overlay.querySelector(winner === 'A' ? '#predict-a' : '#predict-b');
+
+  const state = walletManager.getState();
+  if (!state.connected || !state.address) {
+    alert("Please connect wallet.");
+    return;
+  }
+
+  // Check Points Balance
+  const currentPoints = await getPoints(state.address);
+  if (currentPoints < 20) {
+    alert(`Insufficient Points! Balance: ${currentPoints}. Cost: 20 Points.`);
+    return;
+  }
+
   btn.disabled = true;
   btn.innerHTML = '<div class="loading"></div> Fetching prices...';
 
   try {
+    // Deduct Entry Fee
+    await updatePoints(state.address, -20);
+    console.log(`Entry fee deducted. New Balance: ${currentPoints - 20}`);
+
     // Try Binance first for starting prices
     let startPriceA, startPriceB;
 
@@ -713,6 +767,7 @@ async function makePrediction(winner, overlay) {
       predictedWinner,
       duration: durationHours,
       startTime: Date.now(),
+      userAddress: state.address, // Track user
     };
 
     activeDuels.push(duelInfo);
@@ -724,6 +779,9 @@ async function makePrediction(winner, overlay) {
     selectedTokens = { a: null, b: null };
 
   } catch (error) {
+    // Refund on error?
+    await updatePoints(state.address, 20);
+
     btn.disabled = false;
     btn.innerHTML = winner === 'A' ? `${selectedTokens.a.name} will win` : `${selectedTokens.b.name} will win`;
     alert(`❌ Error: ${error.message}`);
@@ -1213,10 +1271,57 @@ function showDuelResult(duelInfo, overlay, result) {
     </div>
   `;
 
-  const closeBtn = overlay.querySelector('#close-duel-result-btn');
-  if (closeBtn) {
-    closeBtn.addEventListener('click', (e) => {
+  const actionBtn = overlay.querySelector('#close-duel-result-btn');
+  if (actionBtn) {
+    actionBtn.textContent = result.userWon ? 'Claim Reward' : (result.userWon === null ? 'Claim Refund' : 'Settle Duel');
+
+    actionBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
+
+      const state = walletManager.getState();
+      const address = state.address || duelInfo.userAddress; // Fallback to stored address
+
+      if (!address) {
+        alert("Wallet not connected!");
+        return;
+      }
+
+      try {
+        actionBtn.disabled = true;
+        actionBtn.innerHTML = '<div class="loading" style="width: 16px; height: 16px; border-color: white; border-top-color: transparent;"></div> Processing...';
+
+        // Determine Point Adjustment
+        let pointsToAdd = 0;
+        let message = "";
+
+        if (result.userWon) {
+          pointsToAdd = 25; // 20 Entry + 5 Profit
+          message = "🎉 Won 5 Points!";
+        } else if (result.userWon === false) {
+          pointsToAdd = 10; // Return 10, so Net Loss is 10
+          message = "📉 Settle Complete";
+        } else {
+          pointsToAdd = 20; // Refund Entry
+          message = "♻️ Refunded 20 Points";
+        }
+
+        await updatePoints(address, pointsToAdd);
+        const newBalance = await getPoints(address);
+
+        actionBtn.textContent = `${message} (Bal: ${newBalance})`;
+        await new Promise(r => setTimeout(r, 1500));
+
+      } catch (err) {
+        console.error('Points error:', err);
+        actionBtn.innerHTML = '❌ Error';
+        setTimeout(() => {
+          actionBtn.disabled = false;
+          actionBtn.textContent = 'Try Again';
+        }, 2000);
+        return; // Don't close if error
+      }
+
+      // Close logic
       overlay.remove();
 
       const selectionPanel = document.getElementById('selection-panel');

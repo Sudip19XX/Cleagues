@@ -20,6 +20,7 @@ import { submitCandlePrediction } from '../../contracts/gameContract.js';
 import { formatCurrency } from '../../utils/formatters.js';
 import walletManager from '../../wallet/walletManager.js';
 
+
 // Store active subscriptions for cleanup
 let activeSubscriptions = [];
 
@@ -954,7 +955,7 @@ function updateCardWithCandle(card, candle, symbol) {
 }
 
 // Helper to check bet result (called by dedicated subscription)
-function resolveBet(key, symbol, closedCandle, predictionData) {
+async function resolveBet(key, symbol, closedCandle, predictionData) {
   const { prediction, targetCandleOpenTime, unsub } = predictionData;
 
   // Use dynamic button ref
@@ -1041,6 +1042,7 @@ async function submitPrediction(tokenSymbol, prediction, tokenName, timeframe, w
     alert('Please enter a valid wager amount!');
     return;
   }
+
 
   button.disabled = true;
   button.innerHTML = '<div class="loading"></div>';

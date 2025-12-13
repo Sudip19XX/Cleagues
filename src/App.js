@@ -11,6 +11,10 @@ import { createPvPBattle } from './components/games/PvPBattle.js';
 import { createPendingActionWidget, onRouteChange } from './components/PendingActionWidget.js';
 
 import { createPredictionMarket } from './components/PredictionMarket.js';
+import { createLearnMorePage } from './components/LearnMore.js';
+import { createTermsOfUse } from './components/TermsOfUse.js';
+import { createPrivacyPolicy } from './components/PrivacyPolicy.js';
+import { createFAQs } from './components/FAQs.js';
 
 // Simple router state
 let currentRoute = '/';
@@ -72,7 +76,8 @@ function renderRoute(container) {
     container.innerHTML = '';
 
     // Get current route
-    const path = window.location.hash.slice(1) || '/';
+    const fullPath = window.location.hash.slice(1) || '/';
+    const path = fullPath.split('?')[0];
     currentRoute = path;
 
     // Determine if sidebar should be shown
@@ -129,6 +134,18 @@ function renderRoute(container) {
             break;
         case '/prediction-market':
             component = createPredictionMarket();
+            break;
+        case '/learn-more':
+            component = createLearnMorePage();
+            break;
+        case '/terms':
+            component = createTermsOfUse();
+            break;
+        case '/privacy':
+            component = createPrivacyPolicy();
+            break;
+        case '/faqs':
+            component = createFAQs();
             break;
         default:
             component = create404Page();
