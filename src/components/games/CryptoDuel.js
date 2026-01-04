@@ -1,7 +1,7 @@
 // Crypto Duel Game Component
 
 import { fetchTopTokens } from '../../services/priceService.js';
-import { submitDuelPrediction, claimReward } from '../../contracts/gameContract.js';
+import { supabase } from '../../services/supabaseClient.js';
 import { formatCurrency, formatPercentage, getPriceChangeClass } from '../../utils/formatters.js';
 import { TIME_PERIODS } from '../../utils/constants.js';
 import walletManager from '../../wallet/walletManager.js';
@@ -730,13 +730,26 @@ async function makePrediction(winner, overlay) {
     const predictedWinner = winner;
     const durationHours = selectedDuration;
     const durationMs = durationHours * 60 * 60 * 1000; // Convert hours to milliseconds
+    const endTime = new Date(Date.now() + durationMs).toISOString();
 
-    const result = await submitDuelPrediction({
-      tokenA: selectedTokens.a.id,
-      tokenB: selectedTokens.b.id,
-      predictedWinner: winner,
-      duration: selectedDuration,
-    });
+    const { data: duelData, error: duelError } = await supabase
+      .from('duels')
+      .insert({
+        user_address: state.address,
+        token_a_id: selectedTokens.a.id,
+        token_b_id: selectedTokens.b.id,
+        predicted_winner: winner,
+        duration: durationHours,
+        start_price_a: startPriceA,
+        start_price_b: startPriceB,
+        end_time: endTime,
+        status: 'active'
+      })
+      .select()
+      .single();
+
+    if (duelError) throw new Error(duelError.message);
+    const result = { predictionId: duelData.id };
 
     overlay.remove();
 

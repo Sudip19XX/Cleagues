@@ -16,7 +16,7 @@ import {
   cleanupAllConnections,
   KLINE_INTERVALS
 } from '../../services/candleService.js';
-import { submitCandlePrediction } from '../../contracts/gameContract.js';
+import { supabase } from '../../services/supabaseClient.js';
 import { formatCurrency } from '../../utils/formatters.js';
 import walletManager from '../../wallet/walletManager.js';
 
@@ -979,6 +979,19 @@ async function resolveBet(key, symbol, closedCandle, predictionData) {
   const userPredictedGreen = prediction === 'green';
   const isWinner = isGreen === userPredictedGreen;
 
+  // Persist Result
+  if (predictionData.predictionId) {
+    supabase.from('candle_predictions')
+      .update({
+        status: isWinner ? 'won' : 'lost',
+        // could store closing price if needed, but schema didn't force it active
+      })
+      .eq('id', predictionData.predictionId)
+      .then(({ error }) => {
+        if (error) console.error('Failed to update candle prediction result:', error);
+      });
+  }
+
   // Store status for reconnection
   predictionData.customStatus = isWinner ? 'won' : 'lost';
 
@@ -1052,12 +1065,31 @@ async function submitPrediction(tokenSymbol, prediction, tokenName, timeframe, w
       console.log(`🧪 [TEST MODE] Placing ${prediction.toUpperCase()} prediction for ${tokenSymbol} - $${wagerAmount} USDC`);
     }
 
-    const result = await submitCandlePrediction({
-      token: tokenSymbol,
-      isGreen: prediction === 'green',
-      timeframe,
-      wagerAmount,
-    });
+    const { data: resultData, error: insertError } = await supabase
+      .from('candle_predictions')
+      .insert({
+        user_address: state.address,
+        symbol: tokenSymbol,
+        direction: prediction, // 'green' or 'red' -> text check? schema says 'up'/'down'. Wait.
+        // PredictCandle.js uses 'green'/'red'. Schema says CHECK (direction IN ('up', 'down')).
+        // I need to map it.
+        // Or change schema constraint?
+        // Let's map it. Green = up, Red = down.
+        // Wait, schema was: direction text not null CHECK (direction IN ('up', 'down'))
+        // So I must map.
+        direction: prediction === 'green' ? 'up' : 'down',
+        timeframe: timeframe.toString(), // schema text
+        entry_price: 0, // Will be updated later or passed?
+        wager_amount: wagerAmount,
+        status: 'pending'
+      })
+      .select()
+      .single();
+
+    if (insertError) throw insertError;
+
+    // Create a result object matching expected format
+    const result = { predictionId: resultData.id };
 
     // Report volume to backend (fire and forget)
     fetch('/api/volume', {

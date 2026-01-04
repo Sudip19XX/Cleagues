@@ -2,7 +2,7 @@
 // Players predict if price will go UP or DOWN in exactly 1 minute
 
 import { fetchTopTokens } from '../../services/priceService.js';
-import { submitTimeAction } from '../../contracts/gameContract.js';
+import { supabase } from '../../services/supabaseClient.js';
 import { fetchTickerData, subscribeToTickerUpdates, fetchMultipleTickers } from '../../services/candleService.js';
 import { formatCurrency, formatPercentage, getPriceChangeClass } from '../../utils/formatters.js';
 import walletManager from '../../wallet/walletManager.js';
@@ -361,6 +361,26 @@ async function startPrediction(token, type, card) {
       console.log('Using cached price for start');
     }
 
+    // Persist to Supabase
+    const { data: sprintData, error: sprintError } = await supabase
+      .from('sprint_predictions')
+      .insert({
+        user_address: state.address,
+        symbol: token.symbol,
+        direction: type === 'UP' ? 'up' : 'down',
+        start_price: startPrice,
+        start_time: new Date().toISOString(),
+        end_time: new Date(Date.now() + 60000).toISOString(),
+        wager_amount: 5, // Fixed $5 entry hardcoded in UI text
+        status: 'active'
+      })
+      .select()
+      .single();
+
+    if (sprintError) {
+      throw new Error(sprintError.message);
+    }
+
     // Reset Active State HTML
     activeState.innerHTML = `
       <div style="font-size: 0.9rem; margin-bottom: var(--spacing-sm); color: var(--color-text-muted);">
@@ -384,7 +404,8 @@ async function startPrediction(token, type, card) {
       type,
       startPrice,
       startTime,
-      timerInterval: null
+      timerInterval: null,
+      id: sprintData.id // Store Supabase ID
     };
 
     // Store prediction
@@ -475,6 +496,20 @@ async function finishPrediction(token, card, prediction) {
     let won = false;
     if (prediction.type === 'UP' && isUp) won = true;
     if (prediction.type === 'DOWN' && isDown) won = true;
+
+    // Update Supabase
+    if (prediction.id) {
+      supabase.from('sprint_predictions')
+        .update({
+          result_price: endPrice,
+          status: won ? 'won' : 'lost',
+          // payout_tx? If we had one.
+        })
+        .eq('id', prediction.id)
+        .then(({ error }) => {
+          if (error) console.error('Failed to update sprint prediction result:', error);
+        });
+    }
 
     // UI Update
     resultState.innerHTML = `

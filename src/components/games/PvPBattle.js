@@ -15,6 +15,7 @@ import {
   fetchMultipleTickers,
   subscribeToTickerUpdates,
 } from '../../services/candleService.js';
+import { supabase } from '../../services/supabaseClient.js';
 import walletManager from '../../wallet/walletManager.js';
 
 // Allowed tokens for PvP
@@ -591,6 +592,25 @@ async function loadPvPTokens(gridContainer) {
         tickerSubscriptions.push(unsub);
       });
 
+      // Subscribe to PvP bets
+      const betsChannel = supabase.channel('pvp-bets-channel')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'pvp_bets' },
+          (payload) => {
+            console.log('PvP Bet Change:', payload);
+            loadOpenBets(); // Reload on any change for now (simple)
+            // Also check if any of MY bets changed (e.g. matched)
+            const state = walletManager.getState();
+            if (state.address) {
+              loadMyBets();
+            }
+          }
+        )
+        .subscribe();
+
+      tickerSubscriptions.push(() => supabase.removeChannel(betsChannel));
+
       console.log('🟢 PvP Tokens loaded with real-time updates');
     } else {
       throw new Error('No tokens loaded');
@@ -713,117 +733,131 @@ async function submitBet(battleDuration = 5, expiryMinutes = 30) {
   }
 
   try {
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 800));
+    const userAddress = state.address;
+    const opponentDirection = selectedDirection === 'up' ? 'down' : 'up';
 
-    if (TEST_MODE) {
-      console.log(`🧪 [TEST MODE] Simulating $${betAmount} USDC bet placement...`);
+    // 1. Check for existing match
+    const { data: potentialMatches, error: matchError } = await supabase
+      .from('pvp_bets')
+      .select('*')
+      .eq('status', 'open')
+      .eq('symbol', selectedToken.symbol)
+      .eq('amount', betAmount)
+      .eq('duration', battleDuration)
+      .eq('direction', opponentDirection)
+      .neq('user_address', userAddress) // Can't play against self
+      .order('created_at', { ascending: true }) // Match oldest first
+      .limit(1);
+
+    if (matchError) throw matchError;
+
+    if (potentialMatches && potentialMatches.length > 0) {
+      // MATCH FOUND!
+      const match = potentialMatches[0];
+
+      // Optimistic UI Update
+      console.log('Match found!', match);
+
+      // Update the existing bet to matched
+      const { error: updateError } = await supabase
+        .from('pvp_bets')
+        .update({
+          status: 'matched',
+          opponent_address: userAddress,
+          start_price: selectedToken.price, // Use current price as start price
+          expires_at: null // Clear expiry or update it
+        })
+        .eq('id', match.id);
+
+      if (updateError) throw updateError;
+
+      alert(`⚔️ Match Found! Battle started against ${match.user_address.slice(0, 6)}...`);
     } else {
-      console.log(`[Production] Deducting $${betAmount} USDC from wallet...`);
+      // CREATE NEW OPEN BET
+      const { error: insertError } = await supabase
+        .from('pvp_bets')
+        .insert({
+          user_address: userAddress,
+          symbol: selectedToken.symbol,
+          direction: selectedDirection,
+          amount: betAmount,
+          duration: battleDuration,
+          status: 'open',
+          start_price: selectedToken.price, // Reference
+          expires_at: new Date(Date.now() + (expiryMinutes * 60 * 1000)).toISOString()
+        });
+
+      if (insertError) throw insertError;
+
+      alert('✅ Bet Placed! Waiting for opponent...');
     }
 
-    const bet = {
-      id: Date.now().toString(),
-      symbol: selectedToken.symbol,
-      name: selectedToken.name,
-      image: selectedToken.image,
-      direction: selectedDirection,
-      amount: betAmount,
-      duration: battleDuration,
-      expiryTime: Date.now() + (expiryMinutes * 60 * 1000),
-      startPrice: 0, // Set when matched
-      timestamp: Date.now(),
-      user: state.address, // Use real address
-      status: 'open', // 'open', 'matched', 'completed'
-    };
+    // Close modal
+    closeBettingModal();
 
-    // Submit to API
-    const response = await fetch('/api/pvp/bet', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        betData: {
-          ...bet,
-          startPrice: selectedToken.price // Send current price for reference if matched immediately
-        }
-      })
-    });
-
-    const result = await response.json();
-
-    if (result.status === 'matched') {
-      // Match found! Fetch current price as reference
-      let referencePrice = selectedToken.price;
-      // If we got a match, the `result.match` is the OPPONENT'S bet
-      const opponentBet = result.match;
-
-      const battle = {
-        id: Date.now().toString(),
-        player1: { ...opponentBet, status: 'matched' }, // The maker
-        player2: { ...bet, status: 'matched' }, // Us (the taker)
-        startTime: Date.now(),
-        endTime: Date.now() + (PVP_DURATION_MINUTES * 60 * 1000),
-        symbol: bet.symbol,
-        startPrice: referencePrice,
-      };
-
-      activeBattles.push(battle);
-      // Remove the matched bet from open list locally if present
-      openBets = openBets.filter(b => b.id !== opponentBet.id);
-
-      showMatchNotification(battle);
-      startBattleCountdown(battle);
-
-      // Report volume
-      fetch('/api/volume', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: bet.amount })
-      }).catch(err => console.error('Failed to report volume:', err));
-
-    } else {
-      // Created new open bet
-      const createdBet = result.bet;
-      // Transform for local display if needed
-      const localBet = {
-        ...bet,
-        id: createdBet.id
-      };
-
-      openBets.unshift(localBet);
-      myBets.push(localBet);
-      showBetPlacedNotification(localBet);
-    }
-
-    // Refresh open bets from server to be sure
+    // Reload
     loadOpenBets();
-    fetch('/api/volume', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount: betAmount })
-    }).catch(err => console.error('Failed to report volume:', err));
+    loadMyBets();
 
   } catch (error) {
-    alert(`Error: ${error.message}`);
+    console.error('Bet submission error:', error);
     if (submitBtn) {
       submitBtn.disabled = false;
-      submitBtn.textContent = `Place ${selectedDirection.toUpperCase()} Bet ($${betAmount})`;
+      submitBtn.textContent = 'Place Bet';
     }
+    alert(`❌ Error: ${error.message}`);
   }
 }
 
-function loadOpenBets() {
-  // Production Test Mode: Start with empty bets - real users will create them
-  // Each user's bets will be visible to other users in the radar
-  if (TEST_MODE) {
-    console.log('🧪 [TEST MODE] Starting with empty bet radar - waiting for real users to place bets');
-  }
+async function loadOpenBets() {
+  try {
+    const { data, error } = await supabase
+      .from('pvp_bets')
+      .select('*')
+      .eq('status', 'open')
+      .order('created_at', { ascending: false });
 
-  // In production, this would fetch from backend/blockchain
-  // For now, openBets is shared in-memory (works for same-browser testing)
-  // For multi-user testing across browsers, you'd need a backend
-  openBets = [];
-  renderOpenBets();
+    if (error) throw error;
+
+    if (data) {
+      openBets = data.map(b => ({
+        ...b,
+        user: b.user_address,
+        expiryTime: b.expires_at ? new Date(b.expires_at).getTime() : null,
+        timestamp: new Date(b.created_at).getTime()
+      }));
+      renderOpenBets();
+    }
+  } catch (err) {
+    console.error('Error loading open bets:', err);
+  }
+}
+
+async function loadMyBets() {
+  const state = walletManager.getState();
+  if (!state.address) return;
+
+  try {
+    const { data, error } = await supabase
+      .from('pvp_bets')
+      .select('*')
+      .eq('user_address', state.address)
+      .neq('status', 'cancelled')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    if (data) {
+      myBets = data.map(b => ({
+        ...b,
+        user: b.user_address,
+        expiryTime: new Date(b.expires_at).getTime(),
+        timestamp: new Date(b.created_at).getTime()
+      }));
+    }
+  } catch (err) {
+    console.error('Error loading my bets:', err);
+  }
 }
 
 function cancelBet(betId) {

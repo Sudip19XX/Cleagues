@@ -2,10 +2,11 @@
 
 import { fetchTopTokens, searchTokens, getCompetitionTimeInfo, getUTCOpeningPrices, getCachedOpeningPrices, hasValidPriceCache } from '../../services/priceService.js';
 import { getRecentWinners, subscribeToWinners, formatRelativeTime, formatWinAmount } from '../../services/winnersService.js';
-import { submitDreamTeam } from '../../contracts/gameContract.js';
+
 import { formatCurrency, formatPercentage, getPriceChangeClass } from '../../utils/formatters.js';
 import { MULTIPLIERS } from '../../utils/constants.js';
 import walletManager from '../../wallet/walletManager.js';
+import { supabase } from '../../services/supabaseClient.js';
 import { getSelectedTeam, setSelectedTeam, getShouldOpenModal } from '../../utils/teamState.js';
 
 export function createDreamTeam() {
@@ -1407,41 +1408,47 @@ async function openCaptainModal() {
         return;
       }
 
+      const captain = selectedTeam[captainIndex];
+      const viceCaptain = selectedTeam[viceIndex];
+
       btn.disabled = true;
       btn.innerHTML = '<div class="loading"></div> Processing...';
       btn.style.cssText += 'display: flex; align-items: center; justify-content: center; gap: 8px;';
 
+      const state = walletManager.getState();
+      const walletAddress = state.address;
+
+      if (!walletAddress) {
+        alert("Please connect your wallet first.");
+        btn.disabled = false;
+        btn.textContent = 'Submit Team (5 USDC)';
+        return;
+      }
+
       try {
-        // Submit to backend API
-        const response = await fetch('/api/dream-team', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            address: walletAddress,
-            teamData: {
-              tokens: selectedTeam.map(t => {
-                const refPrice = referencePrices[t.symbol]?.openPrice || t.currentPrice;
-                return {
-                  id: t.id,
-                  symbol: t.symbol,
-                  name: t.name,
-                  direction: t.direction,
-                  referencePrice: refPrice,
-                  currentPrice: t.currentPrice // store entry price too just in case
-                };
-              }),
-              captainId: captain.id,
-              viceCaptainId: viceCaptain.id
-            }
+        // Submit to Supabase
+        const { data, error: submitError } = await supabase
+          .from('dream_team_submissions')
+          .insert({
+            user_address: walletAddress,
+            tokens: selectedTeam.map(t => {
+              const refPrice = referencePrices[t.symbol]?.openPrice || t.currentPrice;
+              return {
+                id: t.id,
+                symbol: t.symbol,
+                name: t.name,
+                direction: t.direction,
+                referencePrice: refPrice,
+                currentPrice: t.currentPrice
+              };
+            }),
+            captain_id: captain.symbol,
+            vice_captain_id: viceCaptain.symbol
           })
-        });
+          .select();
 
-        const result = await response.json();
-
-        if (!response.ok) {
-          throw new Error(result.error || 'Failed to submit team');
+        if (submitError) {
+          throw new Error(submitError.message);
         }
 
         overlay.remove();
