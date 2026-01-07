@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://cryptoleagues.io/sitemap.xml
+
+# Disallow API endpoints
+Disallow: /api/
+
+# Disallow internal paths
+Disallow: /src/
+Disallow: /node_modules/
+Disallow: /.git/
+
+# Allow assets
+Allow: /assets/
+
+# Crawl delay (optional, be nice to servers)
+Crawl-delay: 1
